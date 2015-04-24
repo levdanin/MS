@@ -309,8 +309,16 @@ Envjs.loadLink = function(node, href) {
 /**
  * Specifies the location of the cookie file
  */
+Envjs.__cookie_file__ = null;
 Envjs.cookieFile = function(){
-    return 'file://'+Envjs.homedir+'/.cookies';
+    if (!Envjs.__cookie_file__)
+    {
+        return SHJSTerm(SHJSTerm.COMMAND_WRITE_TMP_FILE, {"suffix": "cookie", "data": ""});
+    }
+    else
+    {
+        return Envjs.__cookie_file__;
+    }
 };
 
 /**

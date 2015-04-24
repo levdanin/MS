@@ -235,9 +235,13 @@ namespace WindowsFormsApplication1
                                 {
                                     cont = processor.GotoPageNoSet(fpath);
                                 }
-                                else
+                                else if (System.IO.File.Exists(fpath))
                                 {
                                     cont = System.IO.File.ReadAllText(fpath);
+                                }
+                                else
+                                {
+                                    cont = null;
                                 }
                                 jsProc.StandardInput.WriteLine(cont);
                             }
@@ -249,7 +253,14 @@ namespace WindowsFormsApplication1
                                     fpath = fpath.Substring(7);
                                 }
                                 string data = processor.GetJsonVal("data", lineParts[2]);
-                                System.IO.File.WriteAllText(fpath, data);
+                                if (System.IO.File.Exists(fpath))
+                                {
+                                    System.IO.File.AppendAllText(fpath, data);
+                                }
+                                else
+                                {
+                                    System.IO.File.WriteAllText(fpath, data);
+                                }
                             }
                             else if (lineParts[1] == COMMAND_WRITE_TMP_FILE)
                             {
