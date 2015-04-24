@@ -1221,6 +1221,10 @@ Envjs.connection = function(xhr, responseHandler, data){
         resp = JSON.parse(resp);
     }
     resp = JSON.parse(resp.data);
+    if (resp.data)
+    {
+        resp = JSON.parse(resp.data);
+    }
     console.log("recieved response = " + JSON.stringify(resp));
     xhr.readyState = 4;
     xhr.status = resp.data.status;
