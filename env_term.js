@@ -317,7 +317,7 @@ Envjs.__cookie_file__ = null;
 Envjs.cookieFile = function(){
     if (!Envjs.__cookie_file__)
     {
-        return SHJSTerm(SHJSTerm.COMMAND_WRITE_TMP_FILE, {"suffix": "cookie", "data": ""});
+        return SHJSTerm(SHJSTerm.COMMAND_WRITE_TMP_FILE, {"suffix": "cookie", "data": ""}).data;
     }
     else
     {
@@ -1194,13 +1194,13 @@ Envjs.writeToFile = function(text, url){SHJSTerm(SHJSTerm.COMMAND_WRITE_FILE, {"
  * @param {Object} text
  * @param {Object} suffix
  */
-Envjs.writeToTempFile = function(text, suffix){return SHJSTerm(SHJSTerm.COMMAND_WRITE_TMP_FILE, {"suffix": suffix, "data": text})};
+Envjs.writeToTempFile = function(text, suffix){return SHJSTerm(SHJSTerm.COMMAND_WRITE_TMP_FILE, {"suffix": suffix, "data": text}).data};
 
 /**
  * Used to read the contents of a local file
  * @param {Object} url
  */
-Envjs.readFromFile = function(url){return SHJSTerm(SHJSTerm.COMMAND_READ_FILE, {"path": url})};
+Envjs.readFromFile = function(url){return SHJSTerm(SHJSTerm.COMMAND_READ_FILE, {"path": url}).data};
 
 /**
  * Used to delete a local file
@@ -1221,10 +1221,12 @@ Envjs.connection = function(xhr, responseHandler, data){
         resp = JSON.parse(resp);
     }
     resp = JSON.parse(resp.data);
+    /*
     if (resp.data)
     {
         resp = JSON.parse(resp.data);
     }
+    */
     xhr.readyState = 4;
     xhr.status = resp.status;
     xhr.statusText = resp.statusText;
