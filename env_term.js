@@ -135,7 +135,16 @@ Envjs.scriptTypes = {
  * @param {Object} e
  */
 Envjs.onScriptLoadError = function(script, e){
-    console.log('error loading script %s %s', script, e);
+    var msg;
+    if (typeof script === 'string')
+    {
+        msg = script;
+    }
+    else
+    {
+        msg = JSON.stringify(script);
+    }
+    console.log('error loading script %s %s', msg, e);
 };
 
 
