@@ -242,7 +242,7 @@ Envjs.loadLocalScript = function(script){
                 );
             }
         };
-        xhr.send(null, false);
+        //xhr.send(null, false);
     } catch(e) {
         console.log("could not load script %s \n %s", filename, e );
         Envjs.onScriptLoadError(script, e);
