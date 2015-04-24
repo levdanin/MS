@@ -1191,9 +1191,9 @@ Envjs.uri = function(path, base) {
 /**
  * Used in the XMLHttpRquest implementation to run a
  * request in a seperate thread
- * @param {Object} fn
+ * @param {Function} fn
  */
-Envjs.runAsync = function(fn){};
+Envjs.runAsync = function(fn){return fn()};
 
 
 /**
