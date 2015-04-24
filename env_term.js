@@ -257,6 +257,7 @@ Envjs.loadLocalScript = function(script){
                     xhr.responseText,
                     filename
                 );
+                console.log("script %s was executed", filename);
             }
         };
         xhr.send(null, false);
