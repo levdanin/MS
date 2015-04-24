@@ -24,7 +24,7 @@ try
     var jqs3 = document.createElement('script');
     jqs3.type = 'text/javascript';
     jqs3.text = "/*jQuery(function(){*/SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:'jQuery onload'});/*});*/";
-    document.getElementsByTagName('head')[0].appendChild(jqs3);
+    document.getElementsByTagName('body')[0].appendChild(jqs3);
     
 
     document.getElementsByTagName('body')[0].onload = "SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:'BODY onload'})";
