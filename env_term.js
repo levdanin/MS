@@ -235,11 +235,11 @@ Envjs.loadLocalScript = function(script){
             console.log("readyState %s", xhr.readyState);
             console.log("responseText %s", xhr.responseText);
             if(xhr.readyState === 4){
-                /*Envjs.eval(
+                Envjs.eval(
                     script.ownerDocument.ownerWindow,
                     xhr.responseText,
                     filename
-                );*/
+                );
             }
         };
         xhr.send(null, false);
