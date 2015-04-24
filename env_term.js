@@ -1227,10 +1227,10 @@ Envjs.connection = function(xhr, responseHandler, data){
     }
     console.log("recieved response = " + JSON.stringify(resp));
     xhr.readyState = 4;
-    xhr.status = resp.data.status;
-    xhr.statusText = resp.data.statusText;
-    xhr.responseText = resp.data.responseText;
-    xhr.responseHeaders = resp.data.responseHeaders;
+    xhr.status = resp.status;
+    xhr.statusText = resp.statusText;
+    xhr.responseText = resp.responseText;
+    xhr.responseHeaders = resp.responseHeaders;
     console.log("xhr0 = %s", JSON.stringify(xhr));
     console.log("resp0 = %s", JSON.stringify(resp));
     if (responseHandler)
