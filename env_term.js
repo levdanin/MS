@@ -1166,7 +1166,7 @@ Envjs.writeToFile = function(text, url){SHJSTerm.sendCommand(SHJSTerm.COMMAND_WR
  * @param {Object} text
  * @param {Object} suffix
  */
-Envjs.writeToTempFile = function(text, suffix){SHJSTerm.sendCommand(SHJSTerm.COMMAND_WRITE_TMP_FILE, {"suffix": suffix, "data": text})};
+Envjs.writeToTempFile = function(text, suffix){return SHJSTerm.sendCommand(SHJSTerm.COMMAND_WRITE_TMP_FILE, {"suffix": suffix, "data": text})};
 
 /**
  * Used to read the contents of a local file

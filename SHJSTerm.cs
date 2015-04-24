@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using MagicSubmitter;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace WindowsFormsApplication1
 {
@@ -76,6 +78,65 @@ namespace WindowsFormsApplication1
                     {
                         jsProc.StandardInput.WriteLine(processor.GotoPageNoSet(processor.GetJsonVal("url", lineParts[2])));
                     }
+                    else if (lineParts[1] == COMMAND_SLEEP)
+                    {
+                        System.Threading.Thread.Sleep(Convert.ToInt32(processor.GetJsonVal("millseconds", lineParts[2])));
+                    }
+                    else if (lineParts[1] == COMMAND_DELETE_FILE)
+                    {
+                        string fpath = processor.GetJsonVal("path", lineParts[2]);
+                        if (fpath.StartsWith("file://"))
+                        {
+                            fpath = fpath.Substring(6);
+                        }
+                        System.IO.File.Delete(fpath);
+                    }
+                    else if (lineParts[1] == COMMAND_READ_FILE)
+                    {
+                        string fpath = processor.GetJsonVal("path", lineParts[2]);
+                        if (fpath.StartsWith("file://"))
+                        {
+                            fpath = fpath.Substring(7);
+                        }
+                        string cont;
+                        if (fpath.StartsWith("http://") || fpath.StartsWith("https://"))
+                        {
+                            cont = processor.GotoPageNoSet(fpath);
+                        }
+                        else
+                        {
+                            cont = System.IO.File.ReadAllText(fpath);
+                        }
+                        jsProc.StandardInput.WriteLine(cont);
+                    }
+                    else if (lineParts[1] == COMMAND_WRITE_FILE)
+                    {
+                        string fpath = processor.GetJsonVal("path", lineParts[2]);
+                        if (fpath.StartsWith("file://"))
+                        {
+                            fpath = fpath.Substring(7);
+                        }
+                        string data = processor.GetJsonVal("data", lineParts[2]);
+                        System.IO.File.WriteAllText(fpath, data);
+                    }
+                    else if (lineParts[1] == COMMAND_WRITE_TMP_FILE)
+                    {
+                        string suffix = processor.GetJsonVal("suffix", lineParts[2]);
+                        string data = processor.GetJsonVal("data", lineParts[2]);
+                        string fpath = System.IO.Path.GetTempFileName();
+                        string newpath = fpath + "." + suffix;
+                        System.IO.File.Move(fpath, newpath);
+                        System.IO.File.WriteAllText(newpath, data);
+                        jsProc.StandardInput.WriteLine(newpath);
+                    }
+                    else if (lineParts[1] == COMMAND_HTTP_REQUEST)
+                    {
+                        var xhr = processor.GetJsonVal("xhr", lineParts[2]);
+                        string data = processor.GetJsonVal("data", lineParts[2]);
+                        object resp = new object();
+                        jsProc.StandardInput.WriteLine(JsonConvert.SerializeObject(resp));
+                    }
+
                     jsProc.StandardInput.WriteLine(DELIMITER_INPUT + RESULT_OK);
                 }
                 catch (Exception e)
