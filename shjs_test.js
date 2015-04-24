@@ -11,7 +11,7 @@ try
 
     jqs = document.createElement('script');
     jqs.type = 'text/javascript';
-    jqs.text = 'var onloadCallback = function() {grecaptcha.render("g-recaptcha-div", {"sitekey" : "6LfFYAATAAAAALgkU2LlG2cMgBh1wASqutIc-5e3"});};';
+    jqs.text = "grecaptcha.render('g-recaptcha-div', {sitekey : '6LfFYAATAAAAALgkU2LlG2cMgBh1wASqutIc-5e3'});";
     document.getElementsByTagName('head')[0].appendChild(jqs);
 
     SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:document.innerHTML});
