@@ -2,6 +2,9 @@
  * 
  * Envjs for using with terminal SHJSTerm and SpiderMonkey
  * 
+ * 
+ *  @require shjsterm.js
+ * 
  */
 
 /*
@@ -92,7 +95,7 @@ function __trim__( str ){
  * Writes message to system out
  * @param {String} message
  */
-Envjs.log = function(message){SHJSTerm.sendCommand(SHJSTerm.COMMAND_LOG, {"message": message})};
+Envjs.log = function(message){SHJSTerm(SHJSTerm.COMMAND_LOG, {"message": message})};
 
 /**
  * Constants providing enumerated levels for logging in modules
@@ -748,7 +751,7 @@ Envjs.sync = function(fn){};
  * sleep thread for specified duration
  * @param {Object} millseconds
  */
-Envjs.sleep = function(millseconds){SHJSTerm.sendCommand(SHJSTerm.COMMAND_SLEEP, {'millseconds': millseconds})};
+Envjs.sleep = function(millseconds){SHJSTerm(SHJSTerm.COMMAND_SLEEP, {'millseconds': millseconds})};
 
 /**
  * Interval to wait on event loop when nothing is happening
@@ -1158,7 +1161,7 @@ Envjs.runAsync = function(fn){};
  * @param {Object} text
  * @param {Object} url
  */
-Envjs.writeToFile = function(text, url){SHJSTerm.sendCommand(SHJSTerm.COMMAND_WRITE_FILE, {"path": url, "data": text})};
+Envjs.writeToFile = function(text, url){SHJSTerm(SHJSTerm.COMMAND_WRITE_FILE, {"path": url, "data": text})};
 
 
 /**
@@ -1166,19 +1169,19 @@ Envjs.writeToFile = function(text, url){SHJSTerm.sendCommand(SHJSTerm.COMMAND_WR
  * @param {Object} text
  * @param {Object} suffix
  */
-Envjs.writeToTempFile = function(text, suffix){return SHJSTerm.sendCommand(SHJSTerm.COMMAND_WRITE_TMP_FILE, {"suffix": suffix, "data": text})};
+Envjs.writeToTempFile = function(text, suffix){return SHJSTerm(SHJSTerm.COMMAND_WRITE_TMP_FILE, {"suffix": suffix, "data": text})};
 
 /**
  * Used to read the contents of a local file
  * @param {Object} url
  */
-Envjs.readFromFile = function(url){return SHJSTerm.sendCommand(SHJSTerm.COMMAND_READ_FILE, {"path": url})};
+Envjs.readFromFile = function(url){return SHJSTerm(SHJSTerm.COMMAND_READ_FILE, {"path": url})};
 
 /**
  * Used to delete a local file
  * @param {Object} url
  */
-Envjs.deleteFile = function(url){SHJSTerm.sendCommand(SHJSTerm.COMMAND_DELETE_FILE, {"path": url})};
+Envjs.deleteFile = function(url){SHJSTerm(SHJSTerm.COMMAND_DELETE_FILE, {"path": url})};
 
 /**
  * establishes connection and calls responsehandler
@@ -1187,7 +1190,7 @@ Envjs.deleteFile = function(url){SHJSTerm.sendCommand(SHJSTerm.COMMAND_DELETE_FI
  * @param {Object} data
  */
 Envjs.connection = function(xhr, responseHandler, data){
-    var resp = SHJSTerm.sendCommand(SHJSTerm.COMMAND_HTTP_REQUEST, {"xhr": xhr, "data": data});
+    var resp = SHJSTerm(SHJSTerm.COMMAND_HTTP_REQUEST, {"xhr": xhr, "data": data});
     resp = JSON.parse(resp);
     if (responseHandler)
     {
