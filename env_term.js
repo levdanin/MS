@@ -768,7 +768,7 @@ replace(/(?:^|:|,)(?:\s*\[)+/g, ''))) {
  * synchronizes thread modifications
  * @param {Function} fn
  */
-Envjs.sync = function(fn){};
+Envjs.sync = function(fn){return fn};
 
 /**
  * sleep thread for specified duration
