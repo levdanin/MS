@@ -1227,7 +1227,7 @@ Envjs.connection = function(xhr, responseHandler, data){
     xhr.responseText = resp.data.responseText;
     xhr.responseHeaders = resp.data.responseHeaders;
     console.log("xhr0 = %s", JSON.stringify(xhr));
-    console.log("resp0 = %s", JSON.stringify(resp));
+    console.log("resp0 = %s", JSON.stringify(resp.data));
     if (responseHandler)
     {
         responseHandler(resp.responseText);
