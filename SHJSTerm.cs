@@ -13,6 +13,7 @@ namespace WindowsFormsApplication1
     {
 
         public const string COMMAND_OUTPUT = "OUTPUT";
+        public const string COMMAND_LOG = "LOG";
         public const string COMMAND_DELETE_FILE = "DELETE_FILE";
         public const string COMMAND_WRITE_FILE = "WRITE_FILE";
         public const string COMMAND_WRITE_TMP_FILE = "WRITE_TMP_FILE";
@@ -125,10 +126,10 @@ namespace WindowsFormsApplication1
                         processor.SetLastText(responseText);
                         processor.SetLatestURL(httpResp.ResponseUri.AbsoluteUri);
                         JObject resp = new JObject();
-                        resp["status"] = httpResp.StatusCode.ToString();
+                        resp["status"] = (int)httpResp.StatusCode;
                         resp["statusText"] = httpResp.StatusDescription;
                         resp["responseText"] = responseText;
-                        JArray responseHeaders = new JArray();
+                        JObject responseHeaders = new JObject();
                         foreach (string hName in httpResp.Headers)
                         {
                             responseHeaders[hName] = httpResp.Headers[hName];
@@ -174,6 +175,7 @@ namespace WindowsFormsApplication1
                     }
                     string jsFilePath = System.IO.Path.GetTempFileName();
                     System.IO.File.WriteAllText(jsFilePath, processor.GotoPageNoSet("https://raw.githubusercontent.com/levdanin/MS/master/shjsterm.js"));
+                    System.IO.File.AppendAllText(jsFilePath, processor.GotoPageNoSet("https://raw.githubusercontent.com/levdanin/MS/master/env_term.js"));
                     System.IO.File.AppendAllText(jsFilePath, processor.GotoPageNoSet("https://raw.githubusercontent.com/levdanin/MS/master/shjs_test.js"));
                     jsProc.StartInfo.Arguments = @"-f " + jsFilePath;
                     jsProc.StartInfo.UseShellExecute = false;
@@ -198,7 +200,11 @@ namespace WindowsFormsApplication1
                             */
                             if (lineParts[1] == COMMAND_OUTPUT)
                             {
-                                notCommandText += processor.GetJsonVal("data", lineParts[2]);
+                                notCommandText += "Output:" + processor.GetJsonVal("data", lineParts[2]);
+                            }
+                            else if (lineParts[1] == COMMAND_LOG)
+                            {
+                                notCommandText += "Logged: " + processor.GetJsonVal("message", lineParts[2]);
                             }
                             else if (lineParts[1] == COMMAND_HTTP_GET)
                             {
@@ -259,7 +265,7 @@ namespace WindowsFormsApplication1
                             {
                                 JObject inObj = (JObject)JsonConvert.DeserializeObject(lineParts[2]);
                                 JObject xhr = (JObject)inObj["xhr"];
-                                string data = ((JValue)inObj["data"]).Value.ToString();
+                                string data = (string)inObj["data"];
                                 JObject resp = runHttpRequest(xhr, data);
                                 jsProc.StandardInput.WriteLine(JsonConvert.SerializeObject(resp));
                             }

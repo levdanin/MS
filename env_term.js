@@ -155,7 +155,20 @@ Envjs.loadInlineScript = function(script){
  * @param {Object} source
  * @param {Object} name
  */
-Envjs.eval = function(context, source, name){};
+Envjs.eval = function(context, source, name){
+    if (context)
+    {
+        function contexted()
+        {
+            eval(source);
+        }
+        contexted.call(context);
+    }
+    else
+    {
+        eval(source);
+    }
+};
 
 
 /**
@@ -1193,9 +1206,13 @@ Envjs.connection = function(xhr, responseHandler, data){
     var resp = SHJSTerm(SHJSTerm.COMMAND_HTTP_REQUEST, {"xhr": xhr, "data": data});
     resp = JSON.parse(resp);
     xhr.readyState = 4;
+    xhr.status = resp.status;
+    xhr.statusText = resp.statusText;
+    xhr.responseText = resp.responseText;
+    xhr.responseHeaders = resp.responseHeaders;
     if (responseHandler)
     {
-        responseHandler(resp);
+        responseHandler(resp.responseText);
     }
 };
 
