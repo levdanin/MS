@@ -4,10 +4,13 @@ try
 
     document.body.innerHTML = '<div id="g-recaptcha-div"></div>';
 
-    var scriptEl = document.createElement("script");scriptEl.setAttribute("src", "http://code.jquery.com/jquery.min.js");document.body.appendChild(scriptEl);
-
-
     var jqs = document.createElement('script');
+    jqs.type = 'text/javascript';
+    jqs.src = 'http://code.jquery.com/jquery.min.js';
+    document.getElementsByTagName('head')[0].appendChild(jqs);
+
+
+    jqs = document.createElement('script');
     jqs.type = 'text/javascript';
     jqs.src = 'https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit';
     document.getElementsByTagName('head')[0].appendChild(jqs);
