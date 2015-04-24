@@ -250,7 +250,7 @@ Envjs.loadLocalScript = function(script){
         Envjs.onScriptLoadError(script, e);
         return false;
     }
-    console.log("successfully loaded script %s \n %s", filename);
+    console.log("successfully loaded script %s \n", filename);
     //lets you register a function to execute
     //after the script is loaded
     if(Envjs.afterScriptLoad){
