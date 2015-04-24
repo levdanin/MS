@@ -234,7 +234,6 @@ Envjs.loadLocalScript = function(script){
         console.log("loading external script %s", filename);
         xhr.onreadystatechange = function(){
             console.log("readyState %s", xhr.readyState);
-            console.log("xhr =  %s", JSON.stringify(xhr));
             if(xhr.readyState === 4){
                 Envjs.eval(
                     script.ownerDocument.ownerWindow,
@@ -244,7 +243,6 @@ Envjs.loadLocalScript = function(script){
             }
         };
         xhr.send(null, false);
-        console.log("xhr was sent");
     } catch(e) {
         console.log("could not load script %s \n %s", filename, e );
         Envjs.onScriptLoadError(script, e);
