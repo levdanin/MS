@@ -174,8 +174,6 @@ Envjs.loadInlineScript = function(script){
  * @param {Object} name
  */
 Envjs.eval = function(context, source, name){
-    eval(source);
-    /*
     if (context)
     {
         function contexted()
@@ -188,7 +186,6 @@ Envjs.eval = function(context, source, name){
     {
         eval(source);
     }
-    */
 };
 
 
