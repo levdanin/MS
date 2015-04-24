@@ -1192,6 +1192,7 @@ Envjs.deleteFile = function(url){SHJSTerm(SHJSTerm.COMMAND_DELETE_FILE, {"path":
 Envjs.connection = function(xhr, responseHandler, data){
     var resp = SHJSTerm(SHJSTerm.COMMAND_HTTP_REQUEST, {"xhr": xhr, "data": data});
     resp = JSON.parse(resp);
+    xhr.readyState = 4;
     if (responseHandler)
     {
         responseHandler(resp);
