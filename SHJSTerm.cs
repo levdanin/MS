@@ -11,7 +11,12 @@ namespace WindowsFormsApplication1
     {
 
         public const string COMMAND_OUTPUT = "OUTPUT";
-        public const string COMMAND_WRITEFILE = "WRITEFILE";
+        public const string COMMAND_DELETE_FILE = "DELETE_FILE";
+        public const string COMMAND_WRITE_FILE = "WRITE_FILE";
+        public const string COMMAND_WRITE_TMP_FILE = "WRITE_TMP_FILE";
+        public const string COMMAND_READ_FILE = "READ_FILE";
+        public const string COMMAND_SLEEP = "SLEEP";
+        public const string COMMAND_HTTP_REQUEST = "HTTP_REQUEST";
         public const string COMMAND_HTTP_GET = "HTTP_GET";
         public const string COMMAND_HTTP_POST = "HTTP_POST";
         public const string COMMAND_SET_COOKIES = "SET_COOKIES";
