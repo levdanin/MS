@@ -168,7 +168,7 @@ Envjs.loadInlineScript = function(script){
     load(tmpFile);
     */
     console.log("running inline script " + script.text.substring(0, 20) + " ...");
-    Envjs.eval(null, script.text);
+    Envjs.eval(script.ownerDocument.ownerWindow, script.text);
 };
 
 /**
@@ -178,21 +178,16 @@ Envjs.loadInlineScript = function(script){
  * @param {Object} name
  */
 Envjs.eval = function(context, source, name){
-    eval(source);
-    /*
-    if (context)
-    {
-        function contexted()
-        {
-            eval(source);
-        }
-        contexted.call(context);
-    }
-    else
+    //eval(source);
+    function contexted()
     {
         eval(source);
+    }    
+    if (!context)
+    {
+        context = window;
     }
-    */
+    contexted.call(context);
 };
 
 
