@@ -234,14 +234,13 @@ Envjs.loadLocalScript = function(script){
         xhr.onreadystatechange = function(){
             console.log("readyState %s", xhr.readyState);
             console.log("responseText %s", xhr.responseText);
-            /*
             if(xhr.readyState === 4){
                 Envjs.eval(
                     script.ownerDocument.ownerWindow,
                     xhr.responseText,
                     filename
                 );
-            }*/
+            }
         };
         xhr.send(null, false);
         console.log("xhr was sent");
@@ -1216,7 +1215,7 @@ Envjs.deleteFile = function(url){SHJSTerm(SHJSTerm.COMMAND_DELETE_FILE, {"path":
  */
 Envjs.connection = function(xhr, responseHandler, data){
     var resp = SHJSTerm(SHJSTerm.COMMAND_HTTP_REQUEST, {"xhr": xhr, "data": data});
-    resp = JSON.parse(resp);
+    //resp = JSON.parse(resp);
     xhr.readyState = 4;
     xhr.status = resp.status;
     xhr.statusText = resp.statusText;
