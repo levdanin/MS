@@ -1,1 +1,1 @@
-SHJSTerm.sendCommand(SHJSTerm.COMMAND_OUTPUT, "ok");
+SHJSTerm.sendCommand(SHJSTerm.COMMAND_OUTPUT, {data:"ok"});
