@@ -10,6 +10,17 @@ namespace WindowsFormsApplication1
     class SHJSTerm
     {
 
+        public const string COMMAND_OUTPUT = "OUTPUT";
+        public const string COMMAND_WRITEFILE = "WRITEFILE";
+        public const string COMMAND_HTTP_GET = "HTTP_GET";
+        public const string COMMAND_HTTP_POST = "HTTP_POST";
+        public const string COMMAND_SET_COOKIES = "SET_COOKIES";
+        public const string COMMAND_GET_COOKIES = "GET_COOKIES";
+        public const string DELIMITER_OUTPUT = "<<<";
+        public const string DELIMITER_INPUT = ">>>";
+        public const string RESULT_OK = "OK";
+        public const string RESULT_ERROR = "ERROR";
+
         public FastProcessor processor;
 
         public SHJSTerm()
@@ -45,22 +56,26 @@ namespace WindowsFormsApplication1
             while (!jsProc.StandardOutput.EndOfStream)
             {
                 line = jsProc.StandardOutput.ReadLine();
-                lineParts = line.Split(new string[] { "<<<" }, StringSplitOptions.None);
+                lineParts = line.Split(new string[] { DELIMITER_OUTPUT }, StringSplitOptions.None);
                 if (lineParts.Length != 3)
                 {
                     notCommandText += line;
                 }
                 try
                 {
-                    if (lineParts[1] == "OUTPUT")
+                    if (lineParts[1] == COMMAND_OUTPUT)
                     {
                         MessageBox.Show(processor.GetJsonVal("data", lineParts[2]));
                     }
-                    jsProc.StandardInput.WriteLine(">>>OK");
+                    else if (lineParts[1] == COMMAND_HTTP_GET)
+                    {
+                        jsProc.StandardInput.WriteLine(processor.GotoPageNoSet(processor.GetJsonVal("url", lineParts[2])));
+                    }
+                    jsProc.StandardInput.WriteLine(DELIMITER_INPUT + RESULT_OK);
                 }
                 catch (Exception e)
                 {
-                    jsProc.StandardInput.WriteLine(">>>ERROR>>>" + e.Message);
+                    jsProc.StandardInput.WriteLine(DELIMITER_INPUT + RESULT_ERROR + DELIMITER_INPUT + e.Message);
                 }
             }
             if (!String.IsNullOrEmpty(notCommandText))
@@ -68,6 +83,7 @@ namespace WindowsFormsApplication1
                 MessageBox.Show(notCommandText);
             }
             jsProc.WaitForExit();
+            //MessageBox.Show(jsFilePath);
             System.IO.File.Delete(jsFilePath);
         }
 
