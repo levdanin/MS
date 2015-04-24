@@ -1217,12 +1217,11 @@ Envjs.deleteFile = function(url){SHJSTerm(SHJSTerm.COMMAND_DELETE_FILE, {"path":
 Envjs.connection = function(xhr, responseHandler, data){
     var resp = SHJSTerm(SHJSTerm.COMMAND_HTTP_REQUEST, {"xhr": xhr, "data": data});
     //resp = JSON.parse(resp);
-    console.log("xhr = %s", JSON.stringify(resp));
     xhr.readyState = 4;
-    xhr.status = resp.status;
-    xhr.statusText = resp.statusText;
-    xhr.responseText = resp.responseText;
-    xhr.responseHeaders = resp.responseHeaders;
+    xhr.status = resp.data.status;
+    xhr.statusText = resp.data.statusText;
+    xhr.responseText = resp.data.responseText;
+    xhr.responseHeaders = resp.data.responseHeaders;
     if (responseHandler)
     {
         responseHandler(resp.responseText);
