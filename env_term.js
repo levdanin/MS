@@ -234,13 +234,14 @@ Envjs.loadLocalScript = function(script){
         xhr.onreadystatechange = function(){
             console.log("readyState %s", xhr.readyState);
             console.log("responseText %s", xhr.responseText);
+            /*
             if(xhr.readyState === 4){
                 Envjs.eval(
                     script.ownerDocument.ownerWindow,
                     xhr.responseText,
                     filename
                 );
-            }
+            }*/
         };
         xhr.send(null, false);
         console.log("xhr was sent");
