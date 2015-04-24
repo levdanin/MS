@@ -187,7 +187,7 @@ Envjs.eval = function(context, source, name){
     {
         context = window;
     }
-    context = this;
+    context = Envjs;
     contexted.call(context);
 };
 
