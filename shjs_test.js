@@ -2,6 +2,8 @@ try
 {
     //document.body.innerHTML = '<div class="g-recaptcha" data-sitekey="6LfFYAATAAAAALgkU2LlG2cMgBh1wASqutIc-5e3" data-type="image"></div>';
 
+document.location = "http://www.bookjetty.com/signup";
+/*
     document.body.innerHTML = '<div id="g-recaptcha-div"></div>';
 
     var jqs = document.createElement('script');
@@ -28,6 +30,8 @@ try
     
 
     document.getElementsByTagName('body')[0].onload = "SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:'BODY onload'})";
+
+*/
 
     SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:document.innerHTML});
 
