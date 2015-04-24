@@ -36,12 +36,12 @@ namespace WindowsFormsApplication1
             processor = new FastProcessor();
         }
 
-        public void run()
+        public void run(Form1 form)
         {
-            test();
+            test(form);
         }
 
-        public void test()
+        public void test(Form1 form)
         {
             System.Func<string> runJS = () =>
                 {
@@ -197,11 +197,15 @@ namespace WindowsFormsApplication1
                             */
                             if (lineParts[1] == COMMAND_OUTPUT)
                             {
-                                notCommandText += "Output:" + processor.GetJsonVal("data", lineParts[2]);
+                                string newLine = "Output:" + processor.GetJsonVal("data", lineParts[2]);
+                                notCommandText += newLine;
+                                form.log(newLine);
                             }
                             else if (lineParts[1] == COMMAND_LOG)
                             {
-                                notCommandText += "Logged: " + processor.GetJsonVal("message", lineParts[2]);
+                                string newLine = "Logged: " + processor.GetJsonVal("message", lineParts[2]);
+                                notCommandText += newLine;
+                                form.log(newLine);
                             }
                             else if (lineParts[1] == COMMAND_HTTP_GET)
                             {

@@ -231,20 +231,19 @@ Envjs.loadLocalScript = function(script){
         xhr = new XMLHttpRequest();
         xhr.open("GET", filename, false/*syncronous*/);
         console.log("loading external script %s", filename);
-        /*
         xhr.onreadystatechange = function(){
             console.log("readyState %s", xhr.readyState);
             console.log("responseText %s", xhr.responseText);
             if(xhr.readyState === 4){
-                Envjs.eval(
+                /*Envjs.eval(
                     script.ownerDocument.ownerWindow,
                     xhr.responseText,
                     filename
-                );
+                );*/
             }
         };
         xhr.send(null, false);
-        */
+        console.log("xhr was sent");
     } catch(e) {
         console.log("could not load script %s \n %s", filename, e );
         Envjs.onScriptLoadError(script, e);
