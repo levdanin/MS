@@ -2,6 +2,8 @@ try
 {
     //document.body.innerHTML = '<div class="g-recaptcha" data-sitekey="6LfFYAATAAAAALgkU2LlG2cMgBh1wASqutIc-5e3" data-type="image"></div>';
 
+    var scriptEl = document.createElement("script");scriptEl.setAttribute("src", "http://code.jquery.com/jquery.min.js");document.body.appendChild(scriptEl);
+
     document.body.innerHTML = '<div id="g-recaptcha-div"></div>';
 
     var jqs = document.createElement('script');
