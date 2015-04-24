@@ -1,0 +1,1 @@
+print(SHJSTerm.DELIMITER_INPUT);

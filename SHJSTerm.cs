@@ -14,7 +14,7 @@ namespace WindowsFormsApplication1
 
         public SHJSTerm()
         {
-            processor = new FastProcessor() ;
+            processor = new FastProcessor();
         }
 
         public void run()
@@ -30,7 +30,10 @@ namespace WindowsFormsApplication1
             {
                 jsProc.StartInfo.FileName = @"C:\Program Files\Alexandr Krulik\Magic Submitter\xulrunner\js.exe";
             }
-            jsProc.StartInfo.Arguments = @"-e ""(function(){print('Line1');print('Reading Line:');var s = readline();print(\""hola!\"" + s)})()""";
+            string jsFilePath = System.IO.Path.GetTempFileName();
+            System.IO.File.WriteAllText(jsFilePath, processor.GotoPageNoSet("https://raw.githubusercontent.com/levdanin/MS/master/shjsterm.js"));
+            System.IO.File.AppendAllText(jsFilePath, processor.GotoPageNoSet("https://raw.githubusercontent.com/levdanin/MS/master/shjs_test.js"));
+            jsProc.StartInfo.Arguments = @"-f " + jsFilePath;
             jsProc.StartInfo.UseShellExecute = false;
             jsProc.StartInfo.RedirectStandardOutput = true;
             jsProc.StartInfo.RedirectStandardInput = true;
@@ -38,14 +41,14 @@ namespace WindowsFormsApplication1
             jsProc.Start();
             string line = "";
             string[] lineParts;
-
+            string notCommandText = "";
             while (!jsProc.StandardOutput.EndOfStream)
             {
                 line = jsProc.StandardOutput.ReadLine();
                 lineParts = line.Split(new string[] { "<<<" }, StringSplitOptions.None);
                 if (lineParts.Length != 3)
                 {
-                    throw new Exception("Wrong request recieved: " + line);
+                    notCommandText += line;
                 }
                 try
                 {
@@ -60,7 +63,9 @@ namespace WindowsFormsApplication1
                     jsProc.StandardInput.WriteLine(">>>ERROR>>>" + e.Message);
                 }
             }
-            jsProc.WaitForExit();       
+            MessageBox.Show(notCommandText);
+            jsProc.WaitForExit();
+            System.IO.File.Delete(jsFilePath);
         }
 
     }
