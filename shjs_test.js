@@ -1,2 +1,2 @@
-var html = SHJSTerm.sendCommand(SHJSTerm.COMMAND_HTTP_REQUEST, {url:"https://www.google.com"}).data;
-SHJSTerm.sendCommand(SHJSTerm.COMMAND_OUTPUT, {data:html});
+var resp = SHJSTerm(SHJSTerm.COMMAND_HTTP_REQUEST, {url:"https://www.google.com", method: "GET"});
+SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:JSON.stringify(resp)});
