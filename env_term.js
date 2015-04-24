@@ -1,6 +1,6 @@
 /*
  * 
- * @returns {undefined}Envjs for using with terminal SHJSTerm and SpiderMonkey
+ * Envjs for using with terminal SHJSTerm and SpiderMonkey
  * 
  */
 
