@@ -136,7 +136,10 @@ namespace WindowsFormsApplication1
                         object resp = new object();
                         jsProc.StandardInput.WriteLine(JsonConvert.SerializeObject(resp));
                     }
-
+                    else
+                    {
+                        throw new Exception("Unknown terminal command: " + lineParts[1]);
+                    }
                     jsProc.StandardInput.WriteLine(DELIMITER_INPUT + RESULT_OK);
                 }
                 catch (Exception e)
