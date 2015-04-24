@@ -146,6 +146,7 @@ Envjs.onScriptLoadError = function(script, e){
 Envjs.loadInlineScript = function(script){
     var tmpFile;
     tmpFile = Envjs.writeToTempFile(script.text, 'js') ;
+    console.log("loading script from temp file %s", tmpFile);
     load(tmpFile);
 };
 
@@ -233,7 +234,6 @@ Envjs.loadLocalScript = function(script){
         console.log("loading external script %s", filename);
         xhr.onreadystatechange = function(){
             console.log("readyState %s", xhr.readyState);
-            console.log("responseText %s", xhr.responseText);
             console.log("xhr =  %s", JSON.stringify(xhr));
             if(xhr.readyState === 4){
                 Envjs.eval(
@@ -1225,14 +1225,11 @@ Envjs.connection = function(xhr, responseHandler, data){
     {
         resp = JSON.parse(resp.data);
     }
-    console.log("recieved response = " + JSON.stringify(resp));
     xhr.readyState = 4;
     xhr.status = resp.status;
     xhr.statusText = resp.statusText;
     xhr.responseText = resp.responseText;
     xhr.responseHeaders = resp.responseHeaders;
-    console.log("xhr0 = %s", JSON.stringify(xhr));
-    console.log("resp0 = %s", JSON.stringify(resp));
     if (responseHandler)
     {
         responseHandler(resp.responseText);
