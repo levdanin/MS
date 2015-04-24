@@ -20,6 +20,11 @@ try
     jqs2.type = 'text/javascript';
     jqs2.text = "grecaptcha.render('g-recaptcha-div', {sitekey : '6LfFYAATAAAAALgkU2LlG2cMgBh1wASqutIc-5e3'});";
     document.getElementsByTagName('head')[0].appendChild(jqs2);
+
+    var jqs3 = document.createElement('script');
+    jqs3.type = 'text/javascript';
+    jqs3.text = "jQuery(function(){SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:'jquery onload'});});";
+    document.getElementsByTagName('head')[0].appendChild(jqs2);
     
 
     SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:document.innerHTML});
