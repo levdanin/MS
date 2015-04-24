@@ -232,7 +232,8 @@ Envjs.loadLocalScript = function(script){
         xhr.open("GET", filename, false/*syncronous*/);
         //console.log("loading external script %s", filename);
         xhr.onreadystatechange = function(){
-            //console.log("readyState %s", xhr.readyState);
+            console.log("readyState %s", xhr.readyState);
+            console.log("responseText %s", xhr.responseText);
             if(xhr.readyState === 4){
                 Envjs.eval(
                     script.ownerDocument.ownerWindow,

@@ -66,7 +66,7 @@ namespace WindowsFormsApplication1
                         string method = (string) xhr["method"];
                         string url = (string) xhr["url"];
                         string postData = data;
-                        JArray headers = (JArray)xhr["headers"];
+                        JObject headers = (JObject)xhr["headers"];
                         string referer = null;
                         string accept = null;
                         string contentType = null;
@@ -93,12 +93,9 @@ namespace WindowsFormsApplication1
                         httpReq.AllowAutoRedirect = true;
                         method = method.ToUpper();
                         httpReq.Method = method;
-                        if (headers != null)
+                        foreach (KeyValuePair<string, JToken> hName in headers)
                         {
-                            foreach (string header in headers)
-                            {
-                                httpReq.Headers[header] = (string) headers[header];
-                            }
+                            httpReq.Headers[hName.Key] = (string) hName.Value;
                         }
                         if (method != "GET")
                         {
