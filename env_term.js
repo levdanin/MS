@@ -234,6 +234,7 @@ Envjs.loadLocalScript = function(script){
         xhr.onreadystatechange = function(){
             console.log("readyState %s", xhr.readyState);
             console.log("responseText %s", xhr.responseText);
+            console.log("xhr =  %s", JSON.stringify(xhr));
             if(xhr.readyState === 4){
                 Envjs.eval(
                     script.ownerDocument.ownerWindow,
