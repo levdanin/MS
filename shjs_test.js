@@ -23,9 +23,11 @@ try
 
     var jqs3 = document.createElement('script');
     jqs3.type = 'text/javascript';
-    jqs3.text = "jQuery(function(){SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:'jquery onload'});});";
+    jqs3.text = "jQuery(function(){SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:'jQuery onload'});});";
     document.getElementsByTagName('head')[0].appendChild(jqs2);
     
+
+    document.getElementsByTagName('body')[0].onload = "SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:'BODY onload'})";
 
     SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:document.innerHTML});
 
