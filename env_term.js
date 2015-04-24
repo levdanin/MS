@@ -161,10 +161,14 @@ Envjs.onScriptLoadError = function(script, e){
  * @param {Object} script
  */
 Envjs.loadInlineScript = function(script){
+    /*
     var tmpFile;
     tmpFile = Envjs.writeToTempFile(script.text, 'js') ;
     console.log("loading script from temp file %s", tmpFile);
     load(tmpFile);
+    */
+    console.log("running inline script " + script.text.substring(0, 20) + " ...");
+    Envjs.eval(null, script.text);
 };
 
 /**
