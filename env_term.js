@@ -6515,7 +6515,7 @@ Aspect.around({
                                     node.dispatchEvent( event, false );
                                 }
                             }catch(e){
-                                console.log('error loading html element %s %e', node, e.toString());
+                                console.log('error loading html script element %s %e', node, e.toString());
                             }
                         }
                         break;
