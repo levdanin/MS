@@ -230,7 +230,8 @@ Envjs.loadLocalScript = function(script){
     try {
         xhr = new XMLHttpRequest();
         xhr.open("GET", filename, false/*syncronous*/);
-        //console.log("loading external script %s", filename);
+        console.log("loading external script %s", filename);
+        /*
         xhr.onreadystatechange = function(){
             console.log("readyState %s", xhr.readyState);
             console.log("responseText %s", xhr.responseText);
@@ -242,7 +243,8 @@ Envjs.loadLocalScript = function(script){
                 );
             }
         };
-        //xhr.send(null, false);
+        xhr.send(null, false);
+        */
     } catch(e) {
         console.log("could not load script %s \n %s", filename, e );
         Envjs.onScriptLoadError(script, e);
