@@ -231,11 +231,10 @@ Envjs.loadLocalScript = function(script){
         xhr = new XMLHttpRequest();
         xhr.open("GET", filename, false/*syncronous*/);
         console.log("loading external script %s", filename);
-        xhr.onreadystatechange = function(resp){
+        xhr.onreadystatechange = function(){
             console.log("readyState %s", xhr.readyState);
             console.log("responseText %s", xhr.responseText);
             console.log("xhr =  %s", JSON.stringify(xhr));
-            console.log("resp =  %s", JSON.stringify(resp));
             if(xhr.readyState === 4){
                 Envjs.eval(
                     script.ownerDocument.ownerWindow,
@@ -1218,6 +1217,7 @@ Envjs.deleteFile = function(url){SHJSTerm(SHJSTerm.COMMAND_DELETE_FILE, {"path":
 Envjs.connection = function(xhr, responseHandler, data){
     var resp = SHJSTerm(SHJSTerm.COMMAND_HTTP_REQUEST, {"xhr": xhr, "data": data});
     //resp = JSON.parse(resp);
+    console.log("xhr = %s", JSON.stringify(resp));
     xhr.readyState = 4;
     xhr.status = resp.status;
     xhr.statusText = resp.statusText;
