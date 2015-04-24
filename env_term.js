@@ -1220,7 +1220,6 @@ Envjs.connection = function(xhr, responseHandler, data){
     {
         resp = JSON.parse(resp);
     }
-    resp = JSON.parse(resp.data);
     console.log("recieved response = " + JSON.stringify(resp));
     xhr.readyState = 4;
     xhr.status = resp.data.status;
@@ -1228,7 +1227,7 @@ Envjs.connection = function(xhr, responseHandler, data){
     xhr.responseText = resp.data.responseText;
     xhr.responseHeaders = resp.data.responseHeaders;
     console.log("xhr0 = %s", JSON.stringify(xhr));
-    console.log("resp0 = %s", JSON.stringify(resp.data));
+    console.log("resp0 = %s", JSON.stringify(resp));
     if (responseHandler)
     {
         responseHandler(resp.responseText);
