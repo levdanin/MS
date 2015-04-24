@@ -63,7 +63,10 @@ namespace WindowsFormsApplication1
                     jsProc.StandardInput.WriteLine(">>>ERROR>>>" + e.Message);
                 }
             }
-            MessageBox.Show(notCommandText);
+            if (!String.IsNullOrEmpty(notCommandText))
+            {
+                MessageBox.Show(notCommandText);
+            }
             jsProc.WaitForExit();
             System.IO.File.Delete(jsFilePath);
         }

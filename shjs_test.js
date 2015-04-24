@@ -1,1 +1,1 @@
-print(SHJSTerm.DELIMITER_INPUT);
+SHJSTerm.sendCommand(SHJSTerm.COMMAND_OUTPUT, "ok");
