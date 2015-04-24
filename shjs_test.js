@@ -10,16 +10,16 @@ try
     document.getElementsByTagName('head')[0].appendChild(jqs);
 
 
-    jqs = document.createElement('script');
-    jqs.type = 'text/javascript';
-    jqs.src = 'https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit';
-    document.getElementsByTagName('head')[0].appendChild(jqs);
+    var jqs1 = document.createElement('script');
+    jqs1.type = 'text/javascript';
+    jqs1.src = 'https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit';
+    document.getElementsByTagName('head')[0].appendChild(jqs1);
 
 
-    jqs = document.createElement('script');
-    jqs.type = 'text/javascript';
-    jqs.text = "grecaptcha.render('g-recaptcha-div', {sitekey : '6LfFYAATAAAAALgkU2LlG2cMgBh1wASqutIc-5e3'});";
-    document.getElementsByTagName('head')[0].appendChild(jqs);
+    var jqs2 = document.createElement('script');
+    jqs2.type = 'text/javascript';
+    jqs2.text = "grecaptcha.render('g-recaptcha-div', {sitekey : '6LfFYAATAAAAALgkU2LlG2cMgBh1wASqutIc-5e3'});";
+    document.getElementsByTagName('head')[0].appendChild(jqs2);
     
 
     SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:document.innerHTML});
