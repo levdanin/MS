@@ -187,6 +187,7 @@ Envjs.eval = function(context, source, name){
         }
         else
         {
+            context = __this__;
             console.log("evaluating script %s in proxy scope %s", source.substring(0, 50) + " ...", context);
             return context.eval(source);
         }
