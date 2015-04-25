@@ -31,7 +31,7 @@ try
 */
 
 
-    SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The START 0019"});
+    SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The START 0020"});
 
     document.head.innerHTML = "";
     document.body.innerHTML = "<div></div>";
@@ -55,7 +55,7 @@ try
     jqs2.text = 'console.log("HEAD script DOM 2")';
     document.getElementsByTagName('head')[0].appendChild(jqs2);
 
-    document.parsing = true;
+//    document.parsing = true;
 
 
 

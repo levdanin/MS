@@ -9555,8 +9555,8 @@ __extend__(HTMLScriptElement.prototype, {
          * And no doubt there are other cases as well.
          */
         //@todo uncomment next line
-        //console.log("loading inline script from text setter %s", this);
-        //Envjs.loadInlineScript(this);
+        console.log("loading inline script from text setter %s", this);
+        Envjs.loadInlineScript(this);
     },
 
     get htmlFor(){
@@ -9588,6 +9588,8 @@ __extend__(HTMLScriptElement.prototype, {
     },
     set src(value){
         this.setAttribute('src',value);
+        console.log("loading local script from src setter %s", this);
+        Envjs.loadLocalScript(this);        
     },
     get type(){
         return this.getAttribute('type')||'';
