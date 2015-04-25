@@ -6535,7 +6535,7 @@ Aspect.around({
                     case 'script':
                         /*
                         if((this.nodeName.toLowerCase() === 'head')){
-                                
+                                */
                             try{
                                 okay = Envjs.loadLocalScript(node, null);
                                 //console.log('loaded script? %s %s', node.uuid, okay);
@@ -6548,7 +6548,7 @@ Aspect.around({
                             }catch(e){
                                 console.log('error loading html script element %s %e', node, e.toString());
                             }
-                                
+                               /* 
                         }
                         */
                         break;
@@ -9557,6 +9557,7 @@ __extend__(HTMLScriptElement.prototype, {
          *
          * And no doubt there are other cases as well.
          */
+        //@todo uncomment next line
         //Envjs.loadInlineScript(this);
     },
 
