@@ -4,7 +4,7 @@ try
 
 //document.location = "http://www.bookjetty.com/signup";
 
-    document.body.innerHTML = '<script type="text/javascript">grecaptcha.render(\'g-recaptcha-div\', {sitekey : \'6LfFYAATAAAAALgkU2LlG2cMgBh1wASqutIc-5e3\'});</script><div id="g-recaptcha-div"></div>';
+    document.body.innerHTML = '<div id="g-recaptcha-div"></div><script type="text/javascript">grecaptcha.render(\'g-recaptcha-div\', {sitekey : \'6LfFYAATAAAAALgkU2LlG2cMgBh1wASqutIc-5e3\'});</script>';
 
     var jqs = document.createElement('script');
     jqs.type = 'text/javascript';
