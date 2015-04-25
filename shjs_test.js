@@ -31,11 +31,11 @@ try
 */
 
 
-    SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The START 0016"});
+    SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The START 0017"});
 
     document.head.innerHTML = "";
     document.body.innerHTML = "<div></div>";
-    document.wasParsed = false;
+    document.wasParsed = true;
 
     var jqs0 = document.createElement('script');
     jqs0.type = 'text/javascript';
