@@ -81,6 +81,8 @@ try
     SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"document.innerHTML:" + document.innerHTML});
     
     SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"BODY.outerHTML:" + document.body.outerHTML});
+    
+    SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"BODY.onload:" + document.body.onload});
 
     SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The END"});
 }
