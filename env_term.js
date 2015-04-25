@@ -6533,8 +6533,8 @@ Aspect.around({
                         document.styleSheets.push(CSSStyleSheet(node));
                         break;
                     case 'script':
-                        /*if((this.nodeName.toLowerCase() === 'head')){*/
                         /*
+                        if((this.nodeName.toLowerCase() === 'head')){
                             try{
                                 okay = Envjs.loadLocalScript(node, null);
                                 //console.log('loaded script? %s %s', node.uuid, okay);
@@ -6547,8 +6547,8 @@ Aspect.around({
                             }catch(e){
                                 console.log('error loading html script element %s %e', node, e.toString());
                             }
-                            */
-                        /*}*/
+                        }
+                        */
                         break;
                     case 'frame':
                     case 'iframe':
