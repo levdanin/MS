@@ -6533,6 +6533,7 @@ Aspect.around({
                         document.styleSheets.push(CSSStyleSheet(node));
                         break;
                     case 'script':
+                        /*
                         if(this.nodeName.toLowerCase() === 'head'){
                             console.log('loading script from Aspect.around %s ', node);
                             try{
@@ -6548,6 +6549,7 @@ Aspect.around({
                                 console.log('error loading html script element %s %e', node, e.toString());
                             }
                         }
+                        */
                         break;
                     case 'frame':
                     case 'iframe':
