@@ -11764,7 +11764,6 @@ var __elementPopped__ = function(ns, name, node){
                         case "http://www.w3.org/1999/xhtml":
                             switch(name.toLowerCase()){
                                 case 'script':
-                                    /*
                                     try{
                                         okay = Envjs.loadLocalScript(node, null);
                                         // console.log('loaded script? %s %s', node.uuid, okay);
@@ -11777,7 +11776,6 @@ var __elementPopped__ = function(ns, name, node){
                                     }catch(e){
                                         console.log('error loading script html element %s %s %s %e', ns, name, node, e.toString());
                                     }
-                                    */
                                     break;
                                 case 'frame':
                                 case 'iframe':
