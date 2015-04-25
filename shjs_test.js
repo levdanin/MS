@@ -15,7 +15,8 @@ try
     jqs1.src = 'https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit';
     document.getElementsByTagName('head')[0].appendChild(jqs1);
 
-    document.body.innerHTML = '<div id="g-recaptcha-div"></div>';
+    document.body.innerHTML = '<div id="g-recaptcha-div"></div>'
+                            + '<div class="g-recaptcha" data-sitekey="6LfFYAATAAAAALgkU2LlG2cMgBh1wASqutIc-5e3" data-type="image"></div>';
 
     var jqs3 = document.createElement('script');
     jqs3.type = 'text/javascript';
