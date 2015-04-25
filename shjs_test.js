@@ -34,7 +34,7 @@ try
 
     var jqs = document.createElement('script');
     jqs.type = 'text/javascript';
-    jqs.text = 'SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"HEAD script DOM 1"})';
+    jqs.text = 'SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {"data":"HEAD script DOM 1"})';
     document.getElementsByTagName('head')[0].appendChild(jqs);
 
     document.head.innerHTML += '<script type="text/javascript">SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"HEAD script innerHTML 1"})</script>'
