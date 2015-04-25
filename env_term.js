@@ -6518,7 +6518,7 @@ Aspect.around({
         if (node.namespaceURI === null &&
             node.tagName === 'SCRIPT'/* &&
             this.tagName == 'HEAD'*/) {
-            okay = Envjs.loadLocalScript(node, null);
+            //okay = Envjs.loadLocalScript(node, null);
         }
         break;
         case false:
