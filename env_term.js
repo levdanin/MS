@@ -178,8 +178,10 @@ Envjs.loadInlineScript = function(script){
  * @param {Object} name
  */
 Envjs.eval = function(context, source, name){
+    eval(source);
+    /*
     try
-        {
+    {
         if (context == __this__)
         {
             console.log("evaluating script %s", source.substring(0, 50) + " ...");
@@ -196,6 +198,7 @@ Envjs.eval = function(context, source, name){
     {
         console.log("error evaluating script %s for context %s: %s", source.substring(0, 50) + " ...", context, e);
     }
+    */
 };
 
 
