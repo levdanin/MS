@@ -31,7 +31,7 @@ try
 */
 
 
-    SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The START 0018"});
+    SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The START 0019"});
 
     document.head.innerHTML = "";
     document.body.innerHTML = "<div></div>";
@@ -55,6 +55,10 @@ try
     jqs2.text = 'console.log("HEAD script DOM 2")';
     document.getElementsByTagName('head')[0].appendChild(jqs2);
 
+    document.parsing = true;
+
+
+
     var jqs3 = document.createElement('script');
     jqs3.type = 'text/javascript';
     jqs3.text = 'console.log("BODY script DOM 1")';
@@ -64,8 +68,6 @@ try
     jqs31.type = 'text/javascript';
     jqs31.text = 'console.log("BODY script DOM 1_1")';
     document.getElementsByTagName('body')[0].appendChild(jqs31);
-
-    document.parsing = true;
 
     document.body.innerHTML += '<script type="text/javascript">console.log("BODY script innerHTML 1")</script>'
                               +'<div id="maindiv1"></div>'

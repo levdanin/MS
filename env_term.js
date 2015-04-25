@@ -6533,7 +6533,7 @@ Aspect.around({
                         document.styleSheets.push(CSSStyleSheet(node));
                         break;
                     case 'script':
-                        if((this.nodeName.toLowerCase() === 'head') || !doc.wasParsed){
+                        if(this.nodeName.toLowerCase() === 'head'){
                             console.log('loading script from Aspect.around %s ', node);
                             try{
                                 okay = Envjs.loadLocalScript(node, null);
@@ -11747,7 +11747,7 @@ var __elementPopped__ = function(ns, name, node){
     var doc = node.ownerDocument,
         okay,
         event;
-    console.log('popped html element %s %s %s doc.parsing:%s', ns, name, node, doc.parsing);
+    //console.log('popped html element %s %s %s doc.parsing:%s', ns, name, node, doc.parsing);
     switch(doc.parsing){
         case false:
             //innerHTML so dont do loading patterns for parsing
