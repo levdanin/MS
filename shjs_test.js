@@ -31,7 +31,7 @@ try
 */
 
 
-    SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The START 0017"});
+    SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The START 0018"});
 
     document.head.innerHTML = "";
     document.body.innerHTML = "<div></div>";
@@ -64,6 +64,8 @@ try
     jqs31.type = 'text/javascript';
     jqs31.text = 'console.log("BODY script DOM 1_1")';
     document.getElementsByTagName('body')[0].appendChild(jqs31);
+
+    document.parsing = true;
 
     document.body.innerHTML += '<script type="text/javascript">console.log("BODY script innerHTML 1")</script>'
                               +'<div id="maindiv1"></div>'
