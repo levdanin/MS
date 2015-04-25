@@ -11743,7 +11743,7 @@ __extend__(HTMLDocument.prototype, {
  *
  */
 var __elementPopped__ = function(ns, name, node){
-    //console.log('popped html element %s %s %s', ns, name, node);
+    console.log('popped html element %s %s %s', ns, name, node);
     var doc = node.ownerDocument,
         okay,
         event;
