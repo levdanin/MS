@@ -3,7 +3,7 @@ try
     //document.body.innerHTML = '<div class="g-recaptcha" data-sitekey="6LfFYAATAAAAALgkU2LlG2cMgBh1wASqutIc-5e3" data-type="image"></div>';
 
 //document.location = "http://www.bookjetty.com/signup";
-
+/*
     document.body.innerHTML = '';
 
     document.wasParsed = false;
@@ -28,13 +28,14 @@ try
     
 
     document.body.onload = "console.log('BODY onload')";
+*/
 
-/*
 
-    SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The START 0010"});
+    SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The START 0011"});
 
     document.head.innerHTML = "";
     document.body.innerHTML = "<div></div>";
+    document.wasParsed = true;
 
     var jqs0 = document.createElement('script');
     jqs0.type = 'text/javascript';
@@ -73,7 +74,7 @@ try
     jqs4.text = 'console.log("BODY script DOM 2")';
     document.getElementsByTagName('body')[0].appendChild(jqs4);
 
-*/
+
 
 
     SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:document.innerHTML});
