@@ -32,10 +32,16 @@ try
     document.head.innerHTML = "";
     document.body.innerHTML = "<div></div>";
 
-    var jqs = document.createElement('script');
-    jqs.type = 'text/javascript';
-    jqs.text = 'SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {"data":"HEAD script DOM 1"})';
-    document.getElementsByTagName('head')[0].appendChild(jqs);
+    var jqs0 = document.createElement('script');
+    jqs0.type = 'text/javascript';
+    jqs0.text = 'SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {"data":"HEAD script DOM 1"})';
+    document.getElementsByTagName('head')[0].appendChild(jqs0);
+
+    var jqs01 = document.createElement('script');
+    jqs01.type = 'text/javascript';
+    jqs01.text = 'SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {"data":"HEAD script DOM 1_1"})';
+    document.getElementsByTagName('head')[0].appendChild(jqs01);
+
 
     document.head.innerHTML += '<script type="text/javascript">SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"HEAD script innerHTML 1"})</script>'
                               +'<script type="text/javascript">SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"HEAD script innerHTML 2"})</script>';
@@ -49,6 +55,11 @@ try
     jqs3.type = 'text/javascript';
     jqs3.text = 'SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"BODY script DOM 1"})';
     document.getElementsByTagName('body')[0].appendChild(jqs3);
+
+    var jqs31 = document.createElement('script');
+    jqs31.type = 'text/javascript';
+    jqs31.text = 'SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"BODY script DOM 1_1"})';
+    document.getElementsByTagName('body')[0].appendChild(jqs31);
 
     document.body.innerHTML += '<script type="text/javascript">SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"BODY script innerHTML 1"})</script>'
                               +'<div id="maindiv1"></div>'
