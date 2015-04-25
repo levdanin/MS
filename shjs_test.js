@@ -79,6 +79,8 @@ try
 */
 
     SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:document.innerHTML});
+    
+    SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:document.body.outerHTML});
 
     SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The END"});
 }
