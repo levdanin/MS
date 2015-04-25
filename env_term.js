@@ -6534,7 +6534,6 @@ Aspect.around({
                         break;
                     case 'script':
                         /*if((this.nodeName.toLowerCase() === 'head')){*/
-                        /*
                             try{
                                 okay = Envjs.loadLocalScript(node, null);
                                 //console.log('loaded script? %s %s', node.uuid, okay);
@@ -6547,7 +6546,6 @@ Aspect.around({
                             }catch(e){
                                 console.log('error loading html script element %s %e', node, e.toString());
                             }
-                            */
                         /*}*/
                         break;
                     case 'frame':
@@ -11766,6 +11764,7 @@ var __elementPopped__ = function(ns, name, node){
                         case "http://www.w3.org/1999/xhtml":
                             switch(name.toLowerCase()){
                                 case 'script':
+                                    /*
                                     try{
                                         okay = Envjs.loadLocalScript(node, null);
                                         // console.log('loaded script? %s %s', node.uuid, okay);
@@ -11778,6 +11777,7 @@ var __elementPopped__ = function(ns, name, node){
                                     }catch(e){
                                         console.log('error loading script html element %s %s %s %e', ns, name, node, e.toString());
                                     }
+                                    */
                                     break;
                                 case 'frame':
                                 case 'iframe':
