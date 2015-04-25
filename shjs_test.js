@@ -6,6 +6,8 @@ try
 
     document.body.innerHTML = '';
 
+    document.wasParsed = true;
+
     var jqs = document.createElement('script');
     jqs.type = 'text/javascript';
     jqs.src = 'http://code.jquery.com/jquery.min.js';
