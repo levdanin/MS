@@ -43,7 +43,7 @@ try
     document.getElementsByTagName('head')[0].appendChild(jqs01);
 
 
-    document.head.innerHTML += '<script type="text/javascript">console.log("HEAD script innerHTML 1")</script>'
+    document.head.innerHTML = '<script type="text/javascript">console.log("HEAD script innerHTML 1")</script>'
                               +'<script type="text/javascript">console.log("HEAD script innerHTML 2")</script>';
 
     var jqs2 = document.createElement('script');
