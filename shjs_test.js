@@ -12,7 +12,7 @@ try
 
     var jqs1 = document.createElement('script');
     jqs1.type = 'text/javascript';
-    jqs1.src = 'https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit';
+    jqs1.src = 'https://www.google.com/recaptcha/api.js';//?onload=onloadCallback&render=explicit';
     document.getElementsByTagName('head')[0].appendChild(jqs1);
 
     document.body.innerHTML = '<div id="g-recaptcha-div"></div>'
