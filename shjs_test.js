@@ -4,7 +4,7 @@ try
 
 //document.location = "http://www.bookjetty.com/signup";
 
-    //document.body.innerHTML = '<div id="g-recaptcha-div"></div>';
+    document.body.innerHTML = '<div></div>';
 
     var jqs = document.createElement('script');
     jqs.type = 'text/javascript';
