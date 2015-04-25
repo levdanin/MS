@@ -167,7 +167,7 @@ Envjs.loadInlineScript = function(script){
     console.log("loading script from temp file %s", tmpFile);
     load(tmpFile);
     */
-    console.log("running inline script " + script.text.substring(0, 20) + " ...");
+    console.log("running inline script " + script.text.substring(0, 50) + " ...");
     Envjs.eval(script.ownerDocument.ownerWindow, script.text);
 };
 
@@ -182,11 +182,12 @@ Envjs.eval = function(context, source, name){
         {
         if (context == __this__)
         {
+            console.log("evaluating script %s", source.substring(0, 50) + " ...");
             __this__.eval(source);
         }
         else
         {
-            console.log("evaluating in proxy scope %s", context);
+            console.log("evaluating script %s in proxy scope %s", source.substring(0, 50) + " ...", context);
             return context.eval(source);
         }
     }
