@@ -11743,10 +11743,10 @@ __extend__(HTMLDocument.prototype, {
  *
  */
 var __elementPopped__ = function(ns, name, node){
-    console.log('popped html element %s %s %s', ns, name, node);
     var doc = node.ownerDocument,
         okay,
         event;
+    console.log('popped html element %s %s %s doc.parsing:%s', ns, name, node, doc.parsing);
     switch(doc.parsing){
         case false:
             //innerHTML so dont do loading patterns for parsing
@@ -11766,7 +11766,7 @@ var __elementPopped__ = function(ns, name, node){
                         case "http://www.w3.org/1999/xhtml":
                             switch(name.toLowerCase()){
                                 case 'script':
-                                    console.log('loading script from elmentpop %s ', node);
+                                    console.log('loading script from elementpop %s ', node);
                                     try{
                                         okay = Envjs.loadLocalScript(node, null);
                                         // console.log('loaded script? %s %s', node.uuid, okay);
