@@ -4,7 +4,7 @@ try
 
 //document.location = "http://www.bookjetty.com/signup";
 
-
+    document.body.innerHTML = '';
 
     var jqs = document.createElement('script');
     jqs.type = 'text/javascript';
