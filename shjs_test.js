@@ -29,6 +29,8 @@ try
 
 */
 
+    SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The START 0001"});
+
     document.head.innerHTML = "";
     document.body.innerHTML = "<div></div>";
 
