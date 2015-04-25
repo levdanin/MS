@@ -37,7 +37,7 @@ try
     jqs.text = 'SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"HEAD script DOM 1"})';
     document.getElementsByTagName('head')[0].appendChild(jqs);
 
-    document.head.innerHTML = '<script type="text/javascript">SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"HEAD script innerHTML 1"})</script>'
+    document.head.innerHTML += '<script type="text/javascript">SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"HEAD script innerHTML 1"})</script>'
                               +'<script type="text/javascript">SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"HEAD script innerHTML 2"})</script>';
 
     var jqs2 = document.createElement('script');
@@ -50,7 +50,7 @@ try
     jqs3.text = 'SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"BODY script DOM 1"})';
     document.getElementsByTagName('body')[0].appendChild(jqs3);
 
-    document.body.innerHTML = '<script type="text/javascript">SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"BODY script innerHTML 1"})</script>'
+    document.body.innerHTML += '<script type="text/javascript">SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"BODY script innerHTML 1"})</script>'
                               +'<div id="maindiv1"></div>'
                               +'<script type="text/javascript">SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"BODY script innerHTML 2"})</script>';
 
