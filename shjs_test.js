@@ -21,11 +21,11 @@ try
 
     var jqs3 = document.createElement('script');
     jqs3.type = 'text/javascript';
-    jqs3.text = "SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:'jQuery onload from body'});";
+    jqs3.text = "console.log('jQuery onload from body');";
     document.getElementsByTagName('body')[0].appendChild(jqs3);
     
 
-    document.getElementsByTagName('body')[0].onload = "SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:'BODY onload'})";
+    document.body.onload = "console.log('BODY onload')";
 
 /*
 
