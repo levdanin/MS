@@ -9557,7 +9557,7 @@ __extend__(HTMLScriptElement.prototype, {
          *
          * And no doubt there are other cases as well.
          */
-        Envjs.loadInlineScript(this);
+        //Envjs.loadInlineScript(this);
     },
 
     get htmlFor(){
