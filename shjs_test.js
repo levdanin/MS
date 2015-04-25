@@ -56,7 +56,7 @@ try
 
     var jqs4 = document.createElement('script');
     jqs4.type = 'text/javascript';
-    jqs4.text = 'SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"HEAD script DOM 2"})';
+    jqs4.text = 'SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"BODY script DOM 2"})';
     document.getElementsByTagName('body')[0].appendChild(jqs4);
 
 
