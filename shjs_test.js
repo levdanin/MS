@@ -29,7 +29,7 @@ try
 
 */
 
-    document.head.innerHTML = "<script></script>";
+    document.head.innerHTML = "";
     document.body.innerHTML = "<div></div>";
 
     var jqs = document.createElement('script');
