@@ -29,7 +29,7 @@ try
 
 */
 
-    SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The START 0001"});
+    SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The START 0002"});
 
     document.head.innerHTML = "";
     document.body.innerHTML = "<div></div>";
