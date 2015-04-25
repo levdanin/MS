@@ -42,6 +42,10 @@ try
     jqs01.text = 'console.log("HEAD script DOM 1_1")';
     document.getElementsByTagName('head')[0].appendChild(jqs01);
 
+/*
+    document.head.innerHTML = '<script type="text/javascript">console.log("HEAD script innerHTML 1")</script>'
+                              +'<script type="text/javascript">console.log("HEAD script innerHTML 2")</script>';
+*/
     var jqs2 = document.createElement('script');
     jqs2.type = 'text/javascript';
     jqs2.text = 'console.log("HEAD script DOM 2")';
