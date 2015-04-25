@@ -178,14 +178,21 @@ Envjs.loadInlineScript = function(script){
  * @param {Object} name
  */
 Envjs.eval = function(context, source, name){
-    if (context == __this__)
-    {
-        __this__.eval(source);
+    try
+        {
+        if (context == __this__)
+        {
+            __this__.eval(source);
+        }
+        else
+        {
+            console.log("evaluating in proxy scope %s", context);
+            return context.eval(source);
+        }
     }
-    else
+    catch (e)
     {
-        console.log("evaluating in proxy scope %s", context);
-        return context.eval(source);
+        console.log("error evaluating script %s for context %s: %s", source.substring(0, 50) + " ...", context, e);
     }
 };
 
