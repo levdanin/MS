@@ -29,7 +29,7 @@ try
 
 */
 
-    SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The START 0004"});
+    SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The START 0005"});
 
     document.head.innerHTML = "";
     document.body.innerHTML = "<div></div>";
@@ -71,6 +71,7 @@ try
     jqs4.text = 'console.log("BODY script DOM 2")';
     document.getElementsByTagName('body')[0].appendChild(jqs4);
 
+    HTMLParser.parseDocument(document.innerHTML, document);
 
     SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:document.innerHTML});
 
