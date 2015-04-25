@@ -4,7 +4,7 @@ try
 
 //document.location = "http://www.bookjetty.com/signup";
 
-/*
+
     document.body.innerHTML = '<div id="g-recaptcha-div"></div><script type="text/javascript">grecaptcha.render(\'g-recaptcha-div\', {sitekey : \'6LfFYAATAAAAALgkU2LlG2cMgBh1wASqutIc-5e3\'});</script>';
 
     var jqs = document.createElement('script');
@@ -27,7 +27,7 @@ try
 
     document.getElementsByTagName('body')[0].onload = "SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:'BODY onload'})";
 
-*/
+/*
 
     SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The START 0010"});
 
@@ -71,7 +71,8 @@ try
     jqs4.text = 'console.log("BODY script DOM 2")';
     document.getElementsByTagName('body')[0].appendChild(jqs4);
 
-/*HTMLParser.parseDocument(document.body.innerHTML, document);*/
+*/
+
 
     SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:document.innerHTML});
 
