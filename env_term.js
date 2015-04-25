@@ -6532,7 +6532,7 @@ Aspect.around({
                         document.styleSheets.push(CSSStyleSheet(node));
                         break;
                     case 'script':
-                        if((this.nodeName.toLowerCase() === 'head') || !this.node.ownerDocument.wasParsed){
+                        if((this.nodeName.toLowerCase() === 'head') || !doc.wasParsed){
                             try{
                                 okay = Envjs.loadLocalScript(node, null);
                                 //console.log('loaded script? %s %s', node.uuid, okay);
