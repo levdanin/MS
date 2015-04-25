@@ -2,17 +2,13 @@ try
 {
     //document.body.innerHTML = '<div class="g-recaptcha" data-sitekey="6LfFYAATAAAAALgkU2LlG2cMgBh1wASqutIc-5e3" data-type="image"></div>';
 
+    /*
     document.body.innerHTML = '';
 
-document.location = "http://www.bookjetty.com/signup";
-/*
+    document.location = "http://www.bookjetty.com/signup";
+    */
+
     document.body.innerHTML = '';
-
-    var jqs = document.createElement('script');
-    jqs.type = 'text/javascript';
-    jqs.src = 'http://code.jquery.com/jquery.min.js';
-    document.getElementsByTagName('head')[0].appendChild(jqs);
-
 
     var jqs1 = document.createElement('script');
     jqs1.type = 'text/javascript';
@@ -24,11 +20,9 @@ document.location = "http://www.bookjetty.com/signup";
     var jqs3 = document.createElement('script');
     jqs3.type = 'text/javascript';
     jqs3.text = "grecaptcha.render(\'g-recaptcha-div\', {sitekey : \'6LfFYAATAAAAALgkU2LlG2cMgBh1wASqutIc-5e3\'});";
-    document.getElementsByTagName('body')[0].appendChild(jqs3);
+    document.getElementsByTagName('head')[0].appendChild(jqs3);
     
 
-    document.body.onload = "console.log('BODY onload')";
-*/
 /*
 
     SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The START 0021"});
