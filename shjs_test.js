@@ -24,7 +24,7 @@ try
     jqs3.text = "grecaptcha.render(\'g-recaptcha-div\', {sitekey : \'6LfFYAATAAAAALgkU2LlG2cMgBh1wASqutIc-5e3\'});";
     document.getElementsByTagName('head')[0].appendChild(jqs3);
     
-    document.body.setAttribute('onload', "console.log('body onload')");
+    document.body.setAttribute('onload', "console.log('body onload0')");
     
 
 /*
