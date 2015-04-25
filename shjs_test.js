@@ -6,7 +6,7 @@ try
 
     document.body.innerHTML = '';
 
-    document.wasParsed = true;
+    document.wasParsed = false;
 
     var jqs = document.createElement('script');
     jqs.type = 'text/javascript';
