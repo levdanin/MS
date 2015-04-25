@@ -9554,7 +9554,8 @@ __extend__(HTMLScriptElement.prototype, {
          * And no doubt there are other cases as well.
          */
         //@todo uncomment next line
-        //Envjs.loadInlineScript(this);
+        console.log("loading inline script from text setter %s", this);
+        Envjs.loadInlineScript(this);
     },
 
     get htmlFor(){
