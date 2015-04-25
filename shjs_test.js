@@ -4,7 +4,7 @@ try
 
 //document.location = "http://www.bookjetty.com/signup";
 
-    document.body.innerHTML = '<div id="g-recaptcha-div"></div>';
+    //document.body.innerHTML = '<div id="g-recaptcha-div"></div>';
 
     var jqs = document.createElement('script');
     jqs.type = 'text/javascript';
@@ -22,6 +22,10 @@ try
     jqs2.type = 'text/javascript';
     jqs2.text = "grecaptcha.render('g-recaptcha-div', {sitekey : '6LfFYAATAAAAALgkU2LlG2cMgBh1wASqutIc-5e3'});";
     document.getElementsByTagName('body')[0].appendChild(jqs2);
+
+    var jqs21 = document.createElement('div');
+    jqs21.id = 'g-recaptcha-div';
+    document.getElementsByTagName('body')[0].appendChild(jqs21);
 
     var jqs3 = document.createElement('script');
     jqs3.type = 'text/javascript';
