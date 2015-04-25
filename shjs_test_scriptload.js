@@ -8,6 +8,7 @@ try
     document.location = "http://www.bookjetty.com/signup";
     */
 
+/*
     document.body.innerHTML = '';
 
     var jqs1 = document.createElement('script');
@@ -25,9 +26,9 @@ try
     document.getElementsByTagName('head')[0].appendChild(jqs3);
     
     document.body.setAttribute('onload', "console.log('body onload0')");
-    
+*/  
 
-/*
+
 
     SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The START 0021"});
 
@@ -76,7 +77,7 @@ try
     document.getElementsByTagName('body')[0].appendChild(jqs4);
 
 
-*/
+
 
     SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"document.innerHTML:" + document.innerHTML});
     

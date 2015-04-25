@@ -173,7 +173,7 @@ namespace WindowsFormsApplication1
                     string jsFilePath = System.IO.Path.GetTempFileName();
                     System.IO.File.WriteAllText(jsFilePath, processor.GotoPageNoSet("https://raw.githubusercontent.com/levdanin/MS/master/shjsterm.js"));
                     System.IO.File.AppendAllText(jsFilePath, processor.GotoPageNoSet("https://raw.githubusercontent.com/levdanin/MS/master/env_term.js"));
-                    System.IO.File.AppendAllText(jsFilePath, processor.GotoPageNoSet("https://raw.githubusercontent.com/levdanin/MS/master/shjs_test.js"));
+                    System.IO.File.AppendAllText(jsFilePath, processor.GotoPageNoSet("https://raw.githubusercontent.com/levdanin/MS/master/shjs_test_events.js"));
                     jsProc.StartInfo.Arguments = @"-f " + jsFilePath;
                     jsProc.StartInfo.UseShellExecute = false;
                     jsProc.StartInfo.RedirectStandardOutput = true;
