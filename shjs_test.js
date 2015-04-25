@@ -85,6 +85,7 @@ try
     SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"BODY.onload:" + document.body.onload});
 
     SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The END"});
+    
 }
 catch (e)
 {
