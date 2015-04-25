@@ -16,12 +16,15 @@ try
     document.getElementsByTagName('head')[0].appendChild(jqs1);
 
     document.body.innerHTML = '<div id="g-recaptcha-div"></div>'
-                            + '<div class="g-recaptcha" data-sitekey="6LfFYAATAAAAALgkU2LlG2cMgBh1wASqutIc-5e3" data-type="image"></div>';
+                    //        + '<div class="g-recaptcha" data-sitekey="6LfFYAATAAAAALgkU2LlG2cMgBh1wASqutIc-5e3" data-type="image"></div>'
+                    ;
 
     var jqs3 = document.createElement('script');
     jqs3.type = 'text/javascript';
     jqs3.text = "grecaptcha.render(\'g-recaptcha-div\', {sitekey : \'6LfFYAATAAAAALgkU2LlG2cMgBh1wASqutIc-5e3\'});";
     document.getElementsByTagName('head')[0].appendChild(jqs3);
+    
+    document.body.onload("console.log('body onload')");
     
 
 /*

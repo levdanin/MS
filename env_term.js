@@ -6768,9 +6768,9 @@ var __eval__ = function(script, node){
     if (!script == ""){
         // don't assemble environment if no script...
         try{
-            eval(script);
+            Envjs.eval(script, node);
         }catch(e){
-            console.log('error evaluating %s', e);
+            console.log('error evaluating (__eval__) %s', e);
         }
     }
 };
