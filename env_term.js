@@ -178,17 +178,15 @@ Envjs.loadInlineScript = function(script){
  * @param {Object} name
  */
 Envjs.eval = function(context, source, name){
-    //eval(source);
-    function contexted()
+    if (context == __this__)
     {
-        eval(source);
-    }    
-    if (!context)
-    {
-        context = window;
+        __this__.eval(source);
     }
-    context = Envjs;
-    contexted.call(context);
+    else
+    {
+        console.log("evaluating in proxy scope %s", context);
+        return context.eval(source);
+    }
 };
 
 
