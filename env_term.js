@@ -6535,6 +6535,7 @@ Aspect.around({
                     case 'script':
                         /*
                         if((this.nodeName.toLowerCase() === 'head')){
+                                */
                             try{
                                 okay = Envjs.loadLocalScript(node, null);
                                 //console.log('loaded script? %s %s', node.uuid, okay);
@@ -6547,6 +6548,7 @@ Aspect.around({
                             }catch(e){
                                 console.log('error loading html script element %s %e', node, e.toString());
                             }
+                                /*
                         }
                         */
                         break;
@@ -11911,7 +11913,7 @@ var __elementPopped__ = function(ns, name, node){
 
 __extend__(HTMLElement.prototype,{
     set innerHTML(html){
-        HTMLParser.parseFragment(html, this);
+        //HTMLParser.parseFragment(html, this);
     }
 });
 
