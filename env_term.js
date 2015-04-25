@@ -6533,6 +6533,7 @@ Aspect.around({
                         break;
                     case 'script':
                         if((this.nodeName.toLowerCase() === 'head') || !doc.wasParsed){
+                            console.log('loading script from Aspect.around %s ', node);
                             try{
                                 okay = Envjs.loadLocalScript(node, null);
                                 //console.log('loaded script? %s %s', node.uuid, okay);
@@ -11764,6 +11765,7 @@ var __elementPopped__ = function(ns, name, node){
                         case "http://www.w3.org/1999/xhtml":
                             switch(name.toLowerCase()){
                                 case 'script':
+                                    console.log('loading script from elmentpop %s ', node);
                                     try{
                                         okay = Envjs.loadLocalScript(node, null);
                                         // console.log('loaded script? %s %s', node.uuid, okay);
