@@ -21,7 +21,7 @@ try
     var jqs2 = document.createElement('script');
     jqs2.type = 'text/javascript';
     jqs2.text = "grecaptcha.render('g-recaptcha-div', {sitekey : '6LfFYAATAAAAALgkU2LlG2cMgBh1wASqutIc-5e3'});";
-    document.getElementsByTagName('head')[0].appendChild(jqs2);
+    document.getElementsByTagName('body')[0].appendChild(jqs2);
 
     var jqs3 = document.createElement('script');
     jqs3.type = 'text/javascript';
