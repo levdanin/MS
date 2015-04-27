@@ -30,7 +30,10 @@ try
 
 
 
-    SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The START 0021"});
+    SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The START 0022"});
+
+    document.parsing = true;
+
 
     document.head.innerHTML = "";
     document.body.innerHTML = "<div></div>";
@@ -53,8 +56,6 @@ try
     jqs2.text = 'console.log("HEAD script DOM 2")';
     document.getElementsByTagName('head')[0].appendChild(jqs2);
 
-//    document.parsing = true;
-
 
 
     var jqs3 = document.createElement('script');
@@ -67,6 +68,7 @@ try
     jqs31.text = 'console.log("BODY script DOM 1_1")';
     document.getElementsByTagName('body')[0].appendChild(jqs31);
 
+    console.log(document.body.innerHTML);
     document.body.innerHTML += '<script type="text/javascript">console.log("BODY script innerHTML 1")</script>'
                               +'<div id="maindiv1"></div>'
                               +'<script type="text/javascript">console.log("BODY script innerHTML 2")</script>';
@@ -76,6 +78,7 @@ try
     jqs4.text = 'console.log("BODY script DOM 2")';
     document.getElementsByTagName('body')[0].appendChild(jqs4);
 
+    document.body.setAttribute('onload', "console.log('body onload0')");
 
 
 
@@ -85,6 +88,19 @@ try
     
     SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"BODY.onload:" + document.body.onload});
 
+
+    var event = document.createEvent('Events');
+    event.initEvent("DOMContentLoaded", false, false);
+    document.dispatchEvent( event, false );
+
+    event = document.createEvent('HTMLEvents');
+    event.initEvent("load", false, false);
+    document.dispatchEvent( event, false );
+
+    event = document.createEvent('HTMLEvents');
+    event.initEvent("load", false, false);
+    window.dispatchEvent( event, false );
+                                            
     SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data:"The END"});
     
 }

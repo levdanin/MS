@@ -12,25 +12,10 @@ namespace WindowsFormsApplication1
     class SHJSTerm
     {
 
-        public const string COMMAND_OUTPUT = "OUTPUT";
-        public const string COMMAND_LOG = "LOG";
-        public const string COMMAND_DELETE_FILE = "DELETE_FILE";
-        public const string COMMAND_WRITE_FILE = "WRITE_FILE";
-        public const string COMMAND_WRITE_TMP_FILE = "WRITE_TMP_FILE";
-        public const string COMMAND_READ_FILE = "READ_FILE";
-        public const string COMMAND_SLEEP = "SLEEP";
-        public const string COMMAND_HTTP_REQUEST = "HTTP_REQUEST";
-        public const string COMMAND_HTTP_GET = "HTTP_GET";
-        public const string COMMAND_HTTP_POST = "HTTP_POST";
-        public const string COMMAND_SET_COOKIES = "SET_COOKIES";
-        public const string COMMAND_GET_COOKIES = "GET_COOKIES";
-        public const string DELIMITER_OUTPUT = "<<<";
-        public const string DELIMITER_INPUT = ">>>";
-        public const string RESULT_OK = "OK";
-        public const string RESULT_ERROR = "ERROR";
-
         public FastProcessor processor;
 
+        protected bool _terminateSignalRecieved = false;
+        protected bool _processIsPaused = false;
         public SHJSTerm()
         {
             processor = new FastProcessor();
@@ -41,10 +26,47 @@ namespace WindowsFormsApplication1
             test(form);
         }
 
+        public void terminateProcess()
+        {
+            _terminateSignalRecieved = true;
+        }
+
+        public void pauseToggle()
+        {
+            if (_processIsPaused)
+            {
+                _processIsPaused = false;
+            }
+            else
+            {
+                _processIsPaused = true;
+            }
+        }
+
         public void test(Form1 form)
         {
+
             System.Func<string> runJS = () =>
                 {
+
+                    string COMMAND_OUTPUT = "OUTPUT";
+                    string COMMAND_LOG = "LOG";
+                    string COMMAND_DELETE_FILE = "DELETE_FILE";
+                    string COMMAND_WRITE_FILE = "WRITE_FILE";
+                    string COMMAND_WRITE_TMP_FILE = "WRITE_TMP_FILE";
+                    string COMMAND_READ_FILE = "READ_FILE";
+                    string COMMAND_SLEEP = "SLEEP";
+                    string COMMAND_HTTP_REQUEST = "HTTP_REQUEST";
+                    string COMMAND_HTTP_GET = "HTTP_GET";
+                    string COMMAND_HTTP_POST = "HTTP_POST";
+                    string COMMAND_SET_COOKIES = "SET_COOKIES";
+                    string COMMAND_GET_COOKIES = "GET_COOKIES";
+                    string DELIMITER_OUTPUT = "<<<";
+                    string DELIMITER_INPUT = ">>>";
+                    string RESULT_OK = "OK";
+                    string RESULT_ERROR = "ERROR";
+                    string RESULT_TERMINATE = "TERMINATE";
+
 
                     System.Net.CookieContainer cookieJar = new System.Net.CookieContainer();
                     System.Net.WebProxy proxy = null;
@@ -163,7 +185,6 @@ namespace WindowsFormsApplication1
                         }
                     };
 
-
                     System.Diagnostics.Process jsProc = new System.Diagnostics.Process();
                     jsProc.StartInfo.FileName = System.IO.Directory.GetCurrentDirectory() + @"\xulrunner\js.exe";
                     if (!System.IO.File.Exists(jsProc.StartInfo.FileName))
@@ -171,135 +192,182 @@ namespace WindowsFormsApplication1
                         jsProc.StartInfo.FileName = @"C:\Program Files\Alexandr Krulik\Magic Submitter\xulrunner\js.exe";
                     }
                     string jsFilePath = System.IO.Path.GetTempFileName();
+                    /*
                     System.IO.File.WriteAllText(jsFilePath, processor.GotoPageNoSet("https://raw.githubusercontent.com/levdanin/MS/master/shjsterm.js"));
                     System.IO.File.AppendAllText(jsFilePath, processor.GotoPageNoSet("https://raw.githubusercontent.com/levdanin/MS/master/env_term.js"));
                     System.IO.File.AppendAllText(jsFilePath, processor.GotoPageNoSet("https://raw.githubusercontent.com/levdanin/MS/master/shjs_test_events.js"));
+                    */
+                    System.IO.File.WriteAllText(jsFilePath, System.IO.File.ReadAllText(System.IO.Directory.GetCurrentDirectory() + @"\..\..\..\SHJSTerm\shjsterm.js"));
+                    System.IO.File.AppendAllText(jsFilePath, System.IO.File.ReadAllText(System.IO.Directory.GetCurrentDirectory() + @"\..\..\..\SHJSTerm\env_term.js"));
+                    //System.IO.File.AppendAllText(jsFilePath, System.IO.File.ReadAllText(System.IO.Directory.GetCurrentDirectory() + @"\..\..\..\SHJSTerm\shjs_test_scriptload.js"));
+                    System.IO.File.AppendAllText(jsFilePath, System.IO.File.ReadAllText(System.IO.Directory.GetCurrentDirectory() + @"\..\..\..\SHJSTerm\shjs_test_events.js"));
                     jsProc.StartInfo.Arguments = @"-f " + jsFilePath;
                     jsProc.StartInfo.UseShellExecute = false;
                     jsProc.StartInfo.RedirectStandardOutput = true;
                     jsProc.StartInfo.RedirectStandardInput = true;
                     jsProc.StartInfo.CreateNoWindow = true;
+                    form.log("***************************************************");
+                    form.log("******************* STARTED ***********************");
+                    form.log("***************************************************");
+                    form.debug("started");
                     jsProc.Start();
                     string line = "";
                     string[] lineParts;
                     string notCommandText = "";
                     while (!jsProc.StandardOutput.EndOfStream)
                     {
+                        Application.DoEvents();
+                        Application.DoEvents();
+                        Application.DoEvents();
+                        if (_processIsPaused)
+                        {
+                            form.log("******************* PAUSED ***********************");
+                            form.debug("paused");
+                            while (_processIsPaused && !_terminateSignalRecieved)
+                            {
+                                Application.DoEvents();
+                                Application.DoEvents();
+                                Application.DoEvents();
+                            }
+                            form.log("******************* CONTINUED ***********************");
+                            form.debug("continued");
+                        }
                         line = jsProc.StandardOutput.ReadLine();
+                        Application.DoEvents();
+                        Application.DoEvents();
+                        Application.DoEvents();
+                        if (_terminateSignalRecieved)
+                        {
+                            jsProc.StandardInput.WriteLine(DELIMITER_INPUT + RESULT_TERMINATE + DELIMITER_INPUT + "terminate signal reciever");
+                            form.log("******************* ABORTED ***********************");
+                            form.debug("aborted");
+                            break;
+                        }
                         lineParts = line.Split(new string[] { DELIMITER_OUTPUT }, StringSplitOptions.None);
                         if (lineParts.Length != 3)
                         {
                             notCommandText += line;
                         }
-                        /*
-                        try
+                        else
                         {
-                            */
-                            if (lineParts[1] == COMMAND_OUTPUT)
-                            {
-                                string newLine = "Output:" + processor.GetJsonVal("data", lineParts[2]);
-                                notCommandText += newLine;
-                                form.log(newLine);
-                            }
-                            else if (lineParts[1] == COMMAND_LOG)
-                            {
-                                string newLine = "Logged: " + processor.GetJsonVal("message", lineParts[2]);
-                                notCommandText += newLine;
-                                form.log(newLine);
-                            }
-                            else if (lineParts[1] == COMMAND_HTTP_GET)
-                            {
-                                jsProc.StandardInput.WriteLine(processor.GotoPageNoSet(processor.GetJsonVal("url", lineParts[2])));
-                            }
-                            else if (lineParts[1] == COMMAND_SLEEP)
-                            {
-                                System.Threading.Thread.Sleep(Convert.ToInt32(processor.GetJsonVal("millseconds", lineParts[2])));
-                            }
-                            else if (lineParts[1] == COMMAND_DELETE_FILE)
-                            {
-                                string fpath = processor.GetJsonVal("path", lineParts[2]);
-                                if (fpath.StartsWith("file://"))
-                                {
-                                    fpath = fpath.Substring(6);
-                                }
-                                System.IO.File.Delete(fpath);
-                            }
-                            else if (lineParts[1] == COMMAND_READ_FILE)
-                            {
-                                string fpath = processor.GetJsonVal("path", lineParts[2]);
-                                if (fpath.StartsWith("file://"))
-                                {
-                                    fpath = fpath.Substring(7);
-                                }
-                                string cont;
-                                if (fpath.StartsWith("http://") || fpath.StartsWith("https://"))
-                                {
-                                    cont = processor.GotoPageNoSet(fpath);
-                                }
-                                else if (System.IO.File.Exists(fpath))
-                                {
-                                    cont = System.IO.File.ReadAllText(fpath);
-                                }
-                                else
-                                {
-                                    cont = null;
-                                }
-                                jsProc.StandardInput.WriteLine(cont);
-                            }
-                            else if (lineParts[1] == COMMAND_WRITE_FILE)
-                            {
-                                string fpath = processor.GetJsonVal("path", lineParts[2]);
-                                if (fpath.StartsWith("file://"))
-                                {
-                                    fpath = fpath.Substring(7);
-                                }
-                                string data = processor.GetJsonVal("data", lineParts[2]);
-                                if (System.IO.File.Exists(fpath))
-                                {
-                                    System.IO.File.AppendAllText(fpath, data);
-                                }
-                                else
-                                {
-                                    System.IO.File.WriteAllText(fpath, data);
-                                }
-                            }
-                            else if (lineParts[1] == COMMAND_WRITE_TMP_FILE)
-                            {
-                                string suffix = processor.GetJsonVal("suffix", lineParts[2]);
-                                string data = processor.GetJsonVal("data", lineParts[2]);
-                                string fpath = System.IO.Path.GetTempFileName();
-                                string newpath = fpath + "." + suffix;
-                                System.IO.File.Move(fpath, newpath);
-                                System.IO.File.WriteAllText(newpath, data);
-                                jsProc.StandardInput.WriteLine(newpath);
-                            }
-                            else if (lineParts[1] == COMMAND_HTTP_REQUEST)
-                            {
-                                JObject inObj = (JObject)JsonConvert.DeserializeObject(lineParts[2]);
-                                JObject xhr = (JObject)inObj["xhr"];
-                                string data = (string)inObj["data"];
-                                JObject resp = runHttpRequest(xhr, data);
-                                jsProc.StandardInput.WriteLine(JsonConvert.SerializeObject(resp));
-                            }
-                            else
-                            {
-                                throw new Exception("Unknown terminal command: " + lineParts[1]);
-                            }
-                            jsProc.StandardInput.WriteLine(DELIMITER_INPUT + RESULT_OK);
                             /*
+                            try
+                            {
+                                */
+                                if (lineParts[1] == COMMAND_OUTPUT)
+                                {
+                                    string newLine = "Output:" + processor.GetJsonVal("data", lineParts[2]);
+                                    notCommandText += newLine;
+                                    form.log(newLine);
+                                }
+                                else if (lineParts[1] == COMMAND_LOG)
+                                {
+                                    string newLine = "Logged: " + processor.GetJsonVal("message", lineParts[2]);
+                                    notCommandText += newLine;
+                                    form.log(newLine);
+                                }
+                                else if (lineParts[1] == COMMAND_HTTP_GET)
+                                {
+                                    jsProc.StandardInput.WriteLine(processor.GotoPageNoSet(processor.GetJsonVal("url", lineParts[2])));
+                                }
+                                else if (lineParts[1] == COMMAND_SLEEP)
+                                {
+                                    System.Threading.Thread.Sleep(Convert.ToInt32(processor.GetJsonVal("millseconds", lineParts[2])));
+                                }
+                                else if (lineParts[1] == COMMAND_DELETE_FILE)
+                                {
+                                    string fpath = processor.GetJsonVal("path", lineParts[2]);
+                                    if (fpath.StartsWith("file://"))
+                                    {
+                                        fpath = fpath.Substring(6);
+                                    }
+                                    System.IO.File.Delete(fpath);
+                                }
+                                else if (lineParts[1] == COMMAND_READ_FILE)
+                                {
+                                    string fpath = processor.GetJsonVal("path", lineParts[2]);
+                                    if (fpath.StartsWith("file://"))
+                                    {
+                                        fpath = fpath.Substring(7);
+                                    }
+                                    string cont;
+                                    if (fpath.StartsWith("http://") || fpath.StartsWith("https://"))
+                                    {
+                                        cont = processor.GotoPageNoSet(fpath);
+                                    }
+                                    else if (System.IO.File.Exists(fpath))
+                                    {
+                                        cont = System.IO.File.ReadAllText(fpath);
+                                    }
+                                    else
+                                    {
+                                        cont = null;
+                                    }
+                                    jsProc.StandardInput.WriteLine(cont);
+                                }
+                                else if (lineParts[1] == COMMAND_WRITE_FILE)
+                                {
+                                    string fpath = processor.GetJsonVal("path", lineParts[2]);
+                                    if (fpath.StartsWith("file://"))
+                                    {
+                                        fpath = fpath.Substring(7);
+                                    }
+                                    string data = processor.GetJsonVal("data", lineParts[2]);
+                                    if (System.IO.File.Exists(fpath))
+                                    {
+                                        System.IO.File.AppendAllText(fpath, data);
+                                    }
+                                    else
+                                    {
+                                        System.IO.File.WriteAllText(fpath, data);
+                                    }
+                                }
+                                else if (lineParts[1] == COMMAND_WRITE_TMP_FILE)
+                                {
+                                    string suffix = processor.GetJsonVal("suffix", lineParts[2]);
+                                    string data = processor.GetJsonVal("data", lineParts[2]);
+                                    string fpath = System.IO.Path.GetTempFileName();
+                                    string newpath = fpath + "." + suffix;
+                                    System.IO.File.Move(fpath, newpath);
+                                    System.IO.File.WriteAllText(newpath, data);
+                                    jsProc.StandardInput.WriteLine(newpath);
+                                }
+                                else if (lineParts[1] == COMMAND_HTTP_REQUEST)
+                                {
+                                    JObject inObj = (JObject)JsonConvert.DeserializeObject(lineParts[2]);
+                                    JObject xhr = (JObject)inObj["xhr"];
+                                    string data = (string)inObj["data"];
+                                    JObject resp = runHttpRequest(xhr, data);
+                                    jsProc.StandardInput.WriteLine(JsonConvert.SerializeObject(resp));
+                                }
+                                else
+                                {
+                                    throw new Exception("Unknown terminal command: " + lineParts[1]);
+                                }
+                                jsProc.StandardInput.WriteLine(DELIMITER_INPUT + RESULT_OK);
+                                /*
+                            }
+                            catch (Exception e)
+                            {
+                                jsProc.StandardInput.WriteLine(DELIMITER_INPUT + RESULT_ERROR + DELIMITER_INPUT + e.Message);
+                            }
+                            */
                         }
-                        catch (Exception e)
-                        {
-                            jsProc.StandardInput.WriteLine(DELIMITER_INPUT + RESULT_ERROR + DELIMITER_INPUT + e.Message);
-                        }
-                        */
                     }
-                    jsProc.WaitForExit();
-                    System.IO.File.Delete(jsFilePath);
+                    jsProc.WaitForExit(2000);
+                    try
+                    {
+                        System.IO.File.Delete(jsFilePath);
+                    }
+                    catch (Exception e) { }
+                    _terminateSignalRecieved = false;
                     return notCommandText;
                 };
             string response = runJS();
-            MessageBox.Show("Javascript response: " + response);
+            form.log("*******************************************************************************");
+            form.log("************************************ FINISHED *********************************");
+            form.log("*******************************************************************************");
+            form.debug("finished");
         }
 
     }

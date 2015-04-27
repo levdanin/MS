@@ -18,6 +18,7 @@ SHJSTerm.DELIMITER_OUTPUT = '<<<';
 SHJSTerm.DELIMITER_INPUT = '>>>';
 SHJSTerm.RESULT_OK = 'OK';
 SHJSTerm.RESULT_ERROR = 'ERROR';
+SHJSTerm.RESULT_TERMINATE = 'TERMINATE';
 
 SHJSTerm.sendCommand = function(command, options)
 {
@@ -38,5 +39,13 @@ SHJSTerm.sendCommand = function(command, options)
     else if (readLine.indexOf(this.DELIMITER_INPUT + this.RESULT_ERROR + this.DELIMITER_INPUT) === 0)
     {
         return {status: -1, message: readLine.substring((this.DELIMITER_INPUT + this.RESULT_ERROR + this.DELIMITER_INPUT).length), data: readText};
+    }        
+    else if (readLine.indexOf(this.DELIMITER_INPUT + this.RESULT_TERMINATE + this.DELIMITER_INPUT) === 0)
+    {
+        print("Latest read text:");
+        print(readText);
+        var msg = readLine.substring((this.DELIMITER_INPUT + this.RESULT_TERMINATE + this.DELIMITER_INPUT).length);
+        print("********** ABORTED: " + msg + " **********");
+        throw new Error(msg);
     }        
 }

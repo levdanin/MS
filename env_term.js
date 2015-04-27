@@ -156,6 +156,17 @@ Envjs.onScriptLoadError = function(script, e){
 };
 
 
+Envjs.__unescapeXML__ = function (str) {
+    str = str.replace(/&amp;/g, "&").
+            replace(/&lt;/g, "<").
+            replace(/&gt;/g, ">").
+            replace(/&quot;/g, "\"").
+            replace(/&apos;/g, "'");
+
+    return str;
+};
+
+
 /**
  * load and execute script tag text content
  * @param {Object} script
@@ -168,7 +179,7 @@ Envjs.loadInlineScript = function(script){
     load(tmpFile);
     */
     console.log("running inline script " + script.text.substring(0, 50) + " ...");
-    Envjs.eval(script.ownerDocument.ownerWindow, script.text);
+    Envjs.eval(script.ownerDocument.ownerWindow, Envjs.__unescapeXML__(script.text));
 };
 
 /**
@@ -178,26 +189,24 @@ Envjs.loadInlineScript = function(script){
  * @param {Object} name
  */
 Envjs.eval = function(context, source, name){
-    eval(source);
-    /*
     try
     {
-        if (context == __this__)
+        if (!context || (context == __this__))
         {
-            console.log("evaluating script %s", source.substring(0, 50) + " ...");
-            __this__.eval(source);
+            console.log("evaluating script %s", source.substring(0, 100) + " ...");
+            eval(source);
         }
         else
         {
-            console.log("evaluating script %s in proxy scope %s", source.substring(0, 50) + " ...", context);
-            return context.eval(source);
+            console.log("evaluating script %s in proxy scope %s", source.substring(0, 100) + " ...", context);
+            context.scopedEval = function(){eval(source)};
+            context.scopedEval();
         }
     }
     catch (e)
     {
-        console.log("error evaluating script %s for context %s: %s", source.substring(0, 50) + " ...", context, e);
+        console.log("error evaluating script %s for context %s: %s", source.substring(0, 100) + " ...", context, e);
     }
-    */
 };
 
 
@@ -256,7 +265,7 @@ Envjs.loadLocalScript = function(script){
     base = "" + script.ownerDocument.location;
     //filename = Envjs.uri(script.src.match(/([^\?#]*)/)[1], base );
     //console.log('loading script from base %s', base);
-    filename = Envjs.uri(script.src, base);
+    filename = Envjs.uri(Envjs.__unescapeXML__(script.src), base);
     try {
         xhr = new XMLHttpRequest();
         xhr.open("GET", filename, false/*syncronous*/);
@@ -1302,8 +1311,11 @@ Envjs.loadFrame = function(frame, url){
         //create a new scope for the window proxy
         //platforms will need to override this function
         //to make sure the scope is global-like
+        /*
         frame.contentWindow = (function(){return this;})();
         new Window(frame.contentWindow, window);
+        */
+        frame.contentWindow = new Window({}, window);
 
         //I dont think frames load asynchronously in firefox
         //and I think the tests have verified this but for
@@ -1312,7 +1324,14 @@ Envjs.loadFrame = function(frame, url){
         frame.contentDocument.async = false;
         if(url){
             //console.log('envjs.loadFrame async %s', frame.contentDocument.async);
+            console.log('WINDOW == new window?? : ' + (window === frame.contentWindow));
+            console.log('DOCUMENT == new document?? : ' + (document === frame.contentDocument));
+            var oldDoc = document;
+            document = frame.contentDocument;
             frame.contentWindow.location = url;
+            document = oldDoc;
+            console.log("frame innerHTML (1) = " + document.getElementsByTagName('iframe')[0].contentDocument.innerHTML);
+            console.log("frame xhtml (1) = " + document.getElementsByTagName('iframe')[0].xhtml);
         }
     } catch(e) {
         console.log("failed to load frame content: from %s %s", url, e);
@@ -2010,6 +2029,14 @@ __extend__(Node.prototype, {
             return newChild;
         }
         if(refChild==null){
+            
+            if (newChild.nodeName.toLowerCase().indexOf('iframe') >= 0)
+            {
+                //printStackTrace();
+                //throw 'INSERT BEFORE - ' + newChild.nodeName + ' | THIS - ' + newChild.getAttribute("src");
+                newChild.nodeName = "iframe";
+            }
+            
             this.appendChild(newChild);
             return this.newChild;
         }
@@ -3307,6 +3334,16 @@ __extend__(Text.prototype,{
         return Node.TEXT_NODE;
     },
     get xml(){
+        /*
+        if (this.parentNode.nodeName === 'SCRIPT')
+        {
+            return this.nodeValue;
+        }
+        else
+        {
+            return __escapeXML__(""+ this.nodeValue);
+        }
+        */
         return __escapeXML__(""+ this.nodeValue);
     },
     toString: function(){
@@ -5814,9 +5851,9 @@ setTimeout = function(fn, time){
             tfn = function() {
                 try {
                     // eval in global scope
-                    eval(fn, null);
+                    Envjs.eval(fn, null);
                 } catch (e) {
-                    console.log('timer error %s %s', fn, e);
+                    console.log('timer error (fn is str) %s %s', fn, e);
                 } finally {
                     clearInterval(num);
                 }
@@ -5826,7 +5863,7 @@ setTimeout = function(fn, time){
                 try {
                     fn();
                 } catch (e) {
-                    console.log('timer error %s %s', fn, e);
+                    console.log('timer error (fn is func) %s %s', fn, e);
                 } finally {
                     clearInterval(num);
                 }
@@ -5853,7 +5890,7 @@ setInterval = function(fn, time){
     if (typeof fn == 'string') {
         var fnstr = fn;
         fn = function() {
-            eval(fnstr);
+            Envjs.eval(fnstr);
         };
     }
     var num;
@@ -5939,7 +5976,7 @@ Envjs.wait = function(wait) {
                 earliest.running = true;
                 nextfn();
             } catch (e) {
-                console.log('timer error %s %s', nextfn, e);
+                console.log('timer error (in wait) %s %s', nextfn, e);
             } finally {
                 earliest.running = false;
             }
@@ -6199,6 +6236,7 @@ __extend__(HTMLDocument.prototype, {
         case "HTML":
             node = new HTMLHtmlElement(this);break;
         case "IFRAME":
+            console.log("IFRAME createElement %s", this);
             node = new HTMLIFrameElement(this);break;
         case "IMG":
             node = new HTMLImageElement(this);break;
@@ -6500,6 +6538,15 @@ Aspect.around({
         //changes to src attributes
         return node;
     }
+    /*
+    if (node.tagName.indexOf("FRAME") >= 0 )
+    {
+        console.log("Aspect around append child " + node.tagName);
+        printStackTrace();
+        //throw "Aspect around append child " + node.tagName;
+        node.nodeName = "IFRAME";
+    }
+    */
     //console.log('appended html element %s %s %s',
     //             node.namespaceURI, node.nodeName, node);
     switch(doc.parsing){
@@ -6533,14 +6580,13 @@ Aspect.around({
                         document.styleSheets.push(CSSStyleSheet(node));
                         break;
                     case 'script':
-                        /*
                         if(this.nodeName.toLowerCase() === 'head'){
                             console.log('loading script from Aspect.around %s ', node);
                             try{
                                 okay = Envjs.loadLocalScript(node, null);
                                 //console.log('loaded script? %s %s', node.uuid, okay);
                                 // only fire event if we actually had something to load
-                                if (node.src && node.src.length > 0){
+                                if ((node.src && node.src.length > 0) || (node.text && node.text.length > 0)){
                                     event = doc.createEvent('HTMLEvents');
                                     event.initEvent( okay ? "load" : "error", false, false );
                                     node.dispatchEvent( event, false );
@@ -6549,10 +6595,11 @@ Aspect.around({
                                 console.log('error loading html script element %s %e', node, e.toString());
                             }
                         }
-                        */
                         break;
                     case 'frame':
                     case 'iframe':
+                        var nodeSrc = node.getAttribute('src');
+                        console.log("IFRAME in Aspect.around - src %s", nodeSrc);
                         node.contentWindow = { };
                         node.contentDocument = new HTMLDocument(new DOMImplementation(), node.contentWindow);
                         node.contentWindow.document = node.contentDocument;
@@ -6566,9 +6613,9 @@ Aspect.around({
                             });
                         }
                         try{
-                            if (node.src && node.src.length > 0){
+                            if (nodeSrc && nodeSrc.length > 0){
                                 //console.log("getting content document for (i)frame from %s", node.src);
-                                Envjs.loadFrame(node, Envjs.uri(node.src));
+                                Envjs.loadFrame(node, Envjs.uri(nodeSrc));
                                 event = node.contentDocument.createEvent('HTMLEvents');
                                 event.initEvent("load", false, false);
                                 node.dispatchEvent( event, false );
@@ -7145,7 +7192,7 @@ __extend__(HTMLElement.prototype, {
                 }
             }
         }
-        return ret;
+        return Envjs.__unescapeXML__(ret);
     },
     get lang() {
         return this.getAttribute("lang");
@@ -7198,7 +7245,7 @@ __extend__(HTMLElement.prototype, {
     },
     get outerHTML(){
         //Not in the specs but I'll leave it here for now.
-        return this.xhtml;
+        return Envjs.__unescapeXML__(this.xhtml);
     },
     scrollIntoView: function(){
         /*TODO*/
@@ -7222,6 +7269,7 @@ __extend__(HTMLElement.prototype, {
             attrstring = "",
             i;
 
+
         // serialize namespace declarations
         if (this.namespaceURI){
             if((this === this.ownerDocument.documentElement) ||
@@ -7239,7 +7287,12 @@ __extend__(HTMLElement.prototype, {
             attrstring += " "+attrs[i].name+'="'+attrs[i].xml+'"';
         }
 
-        if(this.hasChildNodes()){
+        if (name === 'iframe')
+        {
+            ret += "<" + name + ns + attrstring +">" + this.childNodes.length + "</" + name + ">";
+        }
+        else if(this.hasChildNodes())
+        {
             // serialize this Element
             ret += "<" + name + ns + attrstring +">";
             for(i=0;i< this.childNodes.length;i++){
@@ -7248,7 +7301,9 @@ __extend__(HTMLElement.prototype, {
                     this.childNodes[i].xml;
             }
             ret += "</" + name + ">";
-        }else{
+        }
+        else 
+        {
             switch(name){
             case 'script':
                 ret += "<" + name + ns + attrstring +"></"+name+">";
@@ -8402,6 +8457,52 @@ __extend__(HTMLFrameElement.prototype, {
     toString: function(){
         return '[object HTMLFrameElement]';
     },
+    
+    get xhtml() {
+        // HTMLDocument.xhtml is non-standard
+        // This is exactly like Document.xml except the tagName has to be
+        // lower cased.  I dont like to duplicate this but its really not
+        // a simple work around between xml and html serialization via
+        // XMLSerializer (which uppercases html tags) and innerHTML (which
+        // lowercases tags)
+
+        var ret = "",
+            ns = "",
+            name = (this.tagName+"").toLowerCase(),
+            attrs,
+            attrstring = "",
+            i;
+
+        // serialize namespace declarations
+        if (this.namespaceURI){
+            if((this === this.ownerDocument.documentElement) ||
+               (!this.parentNode) ||
+               (this.parentNode &&
+                (this.parentNode.namespaceURI !== this.namespaceURI))) {
+                ns = ' xmlns' + (this.prefix ? (':' + this.prefix) : '') +
+                    '="' + this.namespaceURI + '"';
+            }
+        }
+
+        // serialize Attribute declarations
+        attrs = this.attributes;
+        for(i=0;i< attrs.length;i++){
+            attrstring += " "+attrs[i].name+'="'+attrs[i].xml+'"';
+        }
+
+        if (this.contentDocument && this.contentDocument.innerHTML && this.contentDocument.innerHTML > 0)
+        {
+            ret += "<" + name + ns + attrstring +">" + this.contentDocument.innerHTML + "</" + name + ">";
+        }
+        else{
+
+                ret += "<" + name + ns + attrstring +"/>";
+        }
+        
+        return ret;
+    },
+    
+    
     onload: HTMLEvents.prototype.onload
 });
 
@@ -8534,6 +8635,7 @@ __extend__(HTMLHtmlElement.prototype, {
  */
 HTMLIFrameElement = function(ownerDocument) {
     HTMLFrameElement.apply(this, arguments);
+    console.log("HTMLIFrameElement ctor %s", this.tagName);
 };
 HTMLIFrameElement.prototype = new HTMLFrameElement();
 __extend__(HTMLIFrameElement.prototype, {
@@ -9557,8 +9659,11 @@ __extend__(HTMLScriptElement.prototype, {
          * And no doubt there are other cases as well.
          */
         //@todo uncomment next line
-        console.log("loading inline script from text setter %s", this);
-        Envjs.loadInlineScript(this);
+        if (!this.ownerDocument.parsing)
+        {
+            console.log("loading inline script from text setter %s", this);
+            Envjs.loadInlineScript(this);
+        }
     },
 
     get htmlFor(){
@@ -9590,8 +9695,11 @@ __extend__(HTMLScriptElement.prototype, {
     },
     set src(value){
         this.setAttribute('src',value);
-        console.log("loading local script from src setter %s", this);
-        Envjs.loadLocalScript(this);        
+        if (!this.ownerDocument.parsing)
+        {
+            console.log("loading local script from src setter %s", this);
+            Envjs.loadLocalScript(this);        
+        }
     },
     get type(){
         return this.getAttribute('type')||'';
@@ -11679,7 +11787,7 @@ var __clearFragmentCache__ = function(){
  */
 __extend__(Document.prototype, {
     loadXML : function(xmlString) {
-        //console.log('Parser::Document.loadXML');
+        console.log('Parser::Document.loadXML - %s', xmlString);
         // create Document
         if(this === document){
             //$debug("Setting internal window.document");
@@ -11724,7 +11832,7 @@ __extend__(HTMLDocument.prototype, {
      * http://dev.w3.org/html5/spec/Overview.html#document.write
      */
     write: function(htmlstring) {
-        //console.log('writing doc.');
+        console.log('writing doc - %s', htmlstring);
         this.open();
         this._writebuffer.push(htmlstring);
     },
@@ -11733,6 +11841,7 @@ __extend__(HTMLDocument.prototype, {
      * http://dev.w3.org/html5/spec/Overview.html#dom-document-writeln
      */
     writeln: function(htmlstring) {
+        console.log('writingln doc - %s', htmlstring);
         this.open();
         this._writebuffer.push(htmlstring + '\n');
     }
@@ -11776,7 +11885,7 @@ var __elementPopped__ = function(ns, name, node){
                                         okay = Envjs.loadLocalScript(node, null);
                                         // console.log('loaded script? %s %s', node.uuid, okay);
                                         // only fire event if we actually had something to load
-                                        if (node.src && node.src.length > 0){
+                                        if ((node.src && node.src.length > 0) || (node.text && node.text.length > 0)){
                                             event = doc.createEvent('HTMLEvents');
                                             event.initEvent( okay ? "load" : "error", false, false );
                                             node.dispatchEvent( event, false );
@@ -11787,6 +11896,8 @@ var __elementPopped__ = function(ns, name, node){
                                     break;
                                 case 'frame':
                                 case 'iframe':
+                                    var nodeSrc = node.getAttribute('src');
+                                    console.log("IFRAME in __elementPopped__ %s", node.name);
                                     node.contentWindow = { };
                                     node.contentDocument = new HTMLDocument(new DOMImplementation(), node.contentWindow);
                                     node.contentWindow.document = node.contentDocument;
@@ -11800,9 +11911,9 @@ var __elementPopped__ = function(ns, name, node){
                                         });
                                     }
                                     try{
-                                        if (node.src && node.src.length > 0){
+                                        if (nodeSrc && nodeSrc.length > 0){
                                             //console.log("getting content document for (i)frame from %s", node.src);
-                                            Envjs.loadFrame(node, Envjs.uri(node.src));
+                                            Envjs.loadFrame(node, Envjs.uri(nodeSrc));
                                             event = node.contentDocument.createEvent('HTMLEvents');
                                             event.initEvent("load", false, false);
                                             node.dispatchEvent( event, false );
@@ -11822,6 +11933,7 @@ var __elementPopped__ = function(ns, name, node){
                                     }catch(e){
                                         console.log('error loading html element %s %e', node, e.toString());
                                     }
+                                    
                                     /*try{
                                         if (node.src && node.src.length > 0){
                                             //console.log("getting content document for (i)frame from %s", node.src);
@@ -11850,13 +11962,14 @@ var __elementPopped__ = function(ns, name, node){
                                     }
                                     break;
                                 case 'html':
-                                    //console.log('html popped');
+                                    console.log('html popped');
                                     doc.parsing = false;
                                     //DOMContentLoaded event
                                     try{
                                         if(doc.createEvent){
                                             event = doc.createEvent('Events');
                                             event.initEvent("DOMContentLoaded", false, false);
+                                            console.log('DOMContentLoaded event dispatching');
                                             doc.dispatchEvent( event, false );
                                         }
                                     }catch(e){
@@ -11916,7 +12029,8 @@ var __elementPopped__ = function(ns, name, node){
 };
 
 __extend__(HTMLElement.prototype,{
-    set innerHTML(html){
+    set innerHTML(html){   
+        console.log("Setting HTMLElement.innerHTML %s", html);
         HTMLParser.parseFragment(html, this);
     }
 });
@@ -12573,6 +12687,7 @@ Location = function(url, doc, history) {
                             if ($document.createEvent) {
                                 event = $document.createEvent('Event');
                                 event.initEvent('DOMContentLoaded');
+                                console.log('DOMContentLoaded event dispatching in Location.assign');
                                 $document.dispatchEvent( event, false );
                             }
                         }
@@ -12624,6 +12739,7 @@ var __exchangeHTMLDocument__ = function(doc, text, url) {
         if (doc.createEvent) {
             event = doc.createEvent('Event');
             event.initEvent('DOMContentLoaded', false, false);
+            console.log('DOMContentLoaded event dispatching in __exchangeHTMLDocument__');
             doc.dispatchEvent( event, false );
 
             event = doc.createEvent('HTMLEvents');
@@ -13598,3 +13714,24 @@ __extend__(Envjs.defaultEventBehaviors,{
  */
 //CLOSURE_END
 }());
+
+
+function printStackTrace() {
+  var callstack = [];
+  try {
+    i.dont.exist+=0; //doesn't exist- that's the point
+  } catch(e) {
+    if (e.stack) { //Firefox
+      var lines = e.stack.split('\n');
+      for (var i=0, len=lines.length; i<len; i++) {
+        //if (lines[i].match(/^\s*[A-Za-z0-9\-_\$]+\(/)) {
+          callstack.push(lines[i]);
+        //}
+      }
+      //Remove call to printStackTrace()
+      callstack.shift();
+      console.log("Stacktrace :" + callstack.join("\r\n"));
+    }
+  }
+  
+}
