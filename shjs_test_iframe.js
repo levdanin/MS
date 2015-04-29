@@ -63,40 +63,7 @@ try
     console.log("BODY.onload:" + document.body.onload());
     */
 
-/*
-    var el = document.getElementsByTagName('iframe')[0];
-    console.log("iframe doc innerHTML: " + el.contentDocument.innerHTML);
-    */
-
-    var el = document.getElementsByTagName('iframe')[0].contentDocument.getElementById('recaptcha-anchor');
-    console.log("recaptcha-anchor element: " + el.xhtml);
-    
-    console.log("recaptcha-anchor events: " + __dumpObject__(el.__getEventListeners__()));
-    console.log("all events: " + el.__getAllEventListeners__());
-    
-    var event = new Event('MouseEvents');
-    event.initEvent("mousedown", true, true, null, 0,
-                0, 0, 0, 0, false, false, false, 
-                false, null, null);
-    event.initEvent("mouseup", true, true, null, 0,
-                0, 0, 0, 0, false, false, false, 
-                false, null, null);
-    event.initEvent("click", true, true, null, 0,
-                0, 0, 0, 0, false, false, false, 
-                false, null, null);
-    el.dispatchEvent(event);
-    
-    console.log("iframe doc innerHTML: " + document.getElementsByTagName('iframe')[0].contentDocument.innerHTML);
-    
-    /*
-
-    console.log("botguard:" + botguard);
-    console.log("BG:" + botguard.bg);
-    console.log("BG():" + botguard.bg());
-    */
-   
-   eval(__debugInputMacro__);
-   
+    console.log("document.innerHTML:" + document.innerHTML);
     console.log("The END");
     
 }
@@ -104,6 +71,4 @@ catch (e)
 {
     console.log("Error during test: " + e.toString());
 }
-
-
 

@@ -7,6 +7,7 @@
  * 
  */
 
+
 /*
  * Envjs core-env.1.2.13
  * Pure JavaScript Browser Environment
@@ -178,9 +179,49 @@ Envjs.loadInlineScript = function(script){
     console.log("loading script from temp file %s", tmpFile);
     load(tmpFile);
     */
-    console.log("running inline script " + script.text.substring(0, 50) + " ...");
-    Envjs.eval(script.ownerDocument.ownerWindow, Envjs.__unescapeXML__(script.text));
+    var scriptShort = script.text.substring(0, 100) + " ...";
+    if (script.alreadyProcessed)
+    {
+        console.log("inline script was processed already " + scriptShort);
+    }
+    else
+    {
+        console.log("running inline script " + scriptShort);
+        Envjs.eval(script.ownerDocument.ownerWindow, Envjs.__unescapeXML__(script.text), scriptShort);
+        script.alreadyProcessed = true;
+    }
 };
+
+
+Envjs.sandbox = function(context, parent)
+{
+    if (!context.__isSandboxed)
+    {
+        /* v1
+        __extend__(context, __this__);
+        var sandbox = evalcx("");
+        delete sandbox.toString;
+        __extend__(context, sandbox);
+        */
+        /* v2 */
+        var sandbox = evalcx("");
+        __extend__(sandbox, __this__);
+        __extend__(sandbox, context);
+        context = sandbox;
+
+        context.window = context;
+        if (parent)
+        {
+            context.parent = parent;
+        }
+        context.__isSandboxed = true;
+    }
+    return context;
+}
+
+
+Envjs.contexts = {'global': __this__};
+
 
 /**
  * Should evaluate script in some context
@@ -189,6 +230,26 @@ Envjs.loadInlineScript = function(script){
  * @param {Object} name
  */
 Envjs.eval = function(context, source, name){
+    var isWindowContext = (context + "") === "[Window]";
+    if (context && !isWindowContext)
+    {
+        console.log("evaluating script '%s' in non-window context %s: %s", name, context, source.substring(0, 100) + " ...");
+        context.__thisEval__ = function(src){eval(src)};
+        context.__thisEval__(source);
+    }
+    else if (isWindowContext && (context !== window))
+    {
+        console.log("evaluating script '%s' in window context %s: %s", name, context, source.substring(0, 100) + " ...");
+        context = Envjs.sandbox(context);
+        Envjs.contexts[context.__envguid__] = context;
+        evalcx(source, context);
+    }
+    else
+    {
+        console.log("evaluating script '%s' in current context: %s", name, source.substring(0, 100) + " ...");
+        eval(source);
+    }
+    /*
     try
     {
         if (!context || (context == __this__))
@@ -207,8 +268,10 @@ Envjs.eval = function(context, source, name){
     {
         console.log("error evaluating script %s for context %s: %s", source.substring(0, 100) + " ...", context, e);
     }
+    */
 };
 
+__processedScriptsSrc__ = {};
 
 /**
  * Executes a script tag
@@ -223,6 +286,19 @@ Envjs.loadLocalScript = function(script){
     base,
     filename,
     xhr;
+    
+    if (script.alreadyProcessed)
+    {
+        console.log("script was processed already " + (script.src&&script.src.length)?script.src:(script.text.substring(0, 100) + " ..."));
+        return false;
+    }
+    /*
+    else if (script.src && script.src.length && __processedScriptsSrc__[script.src])
+    {
+        console.log("script src was loaded already " + script.src);
+        return false;
+    }
+    */
 
     if(script.type){
         types = script.type.split(";");
@@ -242,6 +318,7 @@ Envjs.loadLocalScript = function(script){
         //console.log('handling inline scripts');
         if(!script.src.length){
             Envjs.loadInlineScript(script);
+            script.alreadyProcessed  = true;
             return true;
         }
     }catch(e){
@@ -271,20 +348,21 @@ Envjs.loadLocalScript = function(script){
         xhr.open("GET", filename, false/*syncronous*/);
         console.log("loading external script %s", filename);
         xhr.onreadystatechange = function(){
-            console.log("script loaded readyState %s", xhr.readyState);
+            console.log("script %s loaded readyState %s", filename, xhr.readyState);
             if(xhr.readyState === 4){
-                console.log("trying to execute script  %s", filename);
                 Envjs.eval(
                     script.ownerDocument.ownerWindow,
                     xhr.responseText,
                     filename
                 );
+                script.alreadyProcessed = true;
+                //__processedScriptsSrc__[script.src] = true;
                 console.log("script %s was executed", filename);
             }
         };
         xhr.send(null, false);
     } catch(e) {
-        console.log("could not load script %s \n %s", filename, e );
+        console.log("could not load script %s \n %s, %s:%s", filename, e, e.fileName, e.lineNumber );
         Envjs.onScriptLoadError(script, e);
         return false;
     }
@@ -791,7 +869,8 @@ test(text.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, '@').
 replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']').
 replace(/(?:^|:|,)(?:\s*\[)+/g, ''))) {
         
-                j = eval('(' + text + ')');
+                /*j = eval('(' + text + ')');*/
+                j = Envjs.eval(window, '(' + text + ')');
 
                 return typeof reviver === 'function' ?
                     walk({'': j}, '') : j;
@@ -806,9 +885,9 @@ replace(/(?:^|:|,)(?:\s*\[)+/g, ''))) {
 
 /**
  * synchronizes thread modifications
- * @param {Function} fn
+ * @param {function} fn
  */
-Envjs.sync = function(fn){return fn};
+Envjs.sync = function(fn){return fn;};
 
 /**
  * sleep thread for specified duration
@@ -1284,7 +1363,8 @@ __extend__(Envjs, urlparse);
  * @param {Object} scope
  * @param {Object} parent
  */
-Envjs.proxy = function(scope, parent, aliasList){};
+Envjs.proxy = function(scope, parent, aliasList){return Envjs.sandbox(scope, parent)};
+
 
 Envjs.javaEnabled = false;
 
@@ -1302,6 +1382,8 @@ Envjs.platform       = '';
  * @param {Object} url
  */
 Envjs.loadFrame = function(frame, url){
+    
+    /*
     try {
         if(frame.contentWindow){
             //mark for garbage collection
@@ -1311,10 +1393,10 @@ Envjs.loadFrame = function(frame, url){
         //create a new scope for the window proxy
         //platforms will need to override this function
         //to make sure the scope is global-like
-        /*
-        frame.contentWindow = (function(){return this;})();
-        new Window(frame.contentWindow, window);
-        */
+        
+        //frame.contentWindow = (function(){return this;})();
+        //new Window(frame.contentWindow, window);
+        
         frame.contentWindow = new Window({}, window);
 
         //I dont think frames load asynchronously in firefox
@@ -1324,18 +1406,53 @@ Envjs.loadFrame = function(frame, url){
         frame.contentDocument.async = false;
         if(url){
             //console.log('envjs.loadFrame async %s', frame.contentDocument.async);
-            console.log('WINDOW == new window?? : ' + (window === frame.contentWindow));
-            console.log('DOCUMENT == new document?? : ' + (document === frame.contentDocument));
             var oldDoc = document;
             document = frame.contentDocument;
             frame.contentWindow.location = url;
             document = oldDoc;
-            console.log("frame innerHTML (1) = " + document.getElementsByTagName('iframe')[0].contentDocument.innerHTML);
-            console.log("frame xhtml (1) = " + document.getElementsByTagName('iframe')[0].xhtml);
         }
     } catch(e) {
         console.log("failed to load frame content: from %s %s", url, e);
     }
+    
+    */
+   
+    var w;
+    try {
+        //console.log('loading frame %s', url);
+        if(frame.contentWindow && frame.contentWindow.close){
+            //mark for garbage collection
+            frame.contentWindow.close();
+        }
+
+        //create a new scope for the window proxy
+        //platforms will need to override this function
+        //to make sure the scope is global-like
+        frame.contentWindow = Envjs.proxy({}, window);
+        //console.log("frame.ownerDocument %s subframe %s", 
+        //  frame.ownerDocument.location,
+        //  frame.ownerDocument.__ownerFrame__);
+        if(frame.ownerDocument&&frame.ownerDocument.__ownerFrame__){
+            //console.log('frame is parent %s', frame.ownerDocument.__ownerFrame__.contentWindow.guid);
+            w = new Window(frame.contentWindow, frame.ownerDocument.__ownerFrame__.contentWindow);
+        }else{
+            //log.debug("window is parent %s", window.guid);
+            w = new Window(frame.contentWindow, window);
+        }
+
+        //I dont think frames load asynchronously in firefox
+        //and I think the tests have verified this but for
+        //some reason I'm less than confident... Are there cases?
+        frame.contentDocument = frame.contentWindow.document;
+        frame.contentDocument.async = false;
+        frame.contentDocument.__ownerFrame__ = frame;
+        if(url){
+            console.log('envjs.loadFrame async %s', frame.contentDocument.async);
+            frame.contentDocument.location.assign(Envjs.uri(url, frame.ownerDocument.location.toString()));
+        }
+    } catch(e) {
+        console.log("failed to load frame content: from %s %s", url, e);
+    }   
 };
 
 
@@ -5201,6 +5318,9 @@ function __setArray__( target, array ) {
  * @uri -//TODO: paste dom event level 2 w3c spc uri here
  */
 EventTarget = function(){};
+
+var $events = [{}];
+
 EventTarget.prototype.addEventListener = function(type, fn, phase){
     __addEventListener__(this, type, fn, phase);
 };
@@ -5211,10 +5331,26 @@ EventTarget.prototype.dispatchEvent = function(event, bubbles){
     __dispatchEvent__(this, event, bubbles);
 };
 
+EventTarget.prototype.__getEventListeners__ = function(type, phase){
+        if (!this.uuid) return false;
+        var evs = $events[this.uuid];
+        if (type)
+        {
+            evs = evs[type];
+            if (phase)
+            {
+                evs = evs[phase];
+            }
+        }
+        return evs;
+}
+
+EventTarget.prototype.__getAllEventListeners__ = function(){
+        return $events;
+}
+
 __extend__(Node.prototype, EventTarget.prototype);
 
-
-var $events = [{}];
 
 function __addEventListener__(target, type, fn, phase){
     phase = !!phase?"CAPTURING":"BUBBLING";
@@ -5800,13 +5936,6 @@ var setTimeout,
 *   implementation provided by Steven Parkes
 */
 
-//private
-var $timers = [],
-    EVENT_LOOP_RUNNING = false;
-
-$timers.lock = function(fn){
-    Envjs.sync(fn)();
-};
 
 //private internal class
 var Timer = function(fn, interval){
@@ -5834,7 +5963,7 @@ Timer.normalize = function(time) {
 };
 // html5 says this should be at least 4, but the parser is using
 // a setTimeout for the SAX stuff which messes up the world
-Timer.MIN_TIME = /* 4 */ 0;
+Timer.MIN_TIME =  4 /* 0 */;
 
 /**
  * @function setTimeout
@@ -5844,16 +5973,16 @@ Timer.MIN_TIME = /* 4 */ 0;
 setTimeout = function(fn, time){
     var num;
     time = Timer.normalize(time);
-    $timers.lock(function(){
+    (function(){
         num = $timers.length+1;
         var tfn;
         if (typeof fn == 'string') {
             tfn = function() {
                 try {
                     // eval in global scope
-                    Envjs.eval(fn, null);
+                    Envjs.eval(window, fn);
                 } catch (e) {
-                    console.log('timer error (fn is str) %s %s', fn, e);
+                    console.log('timer error 1 (fn is str) %s %s', fn, e);
                 } finally {
                     clearInterval(num);
                 }
@@ -5863,7 +5992,7 @@ setTimeout = function(fn, time){
                 try {
                     fn();
                 } catch (e) {
-                    console.log('timer error (fn is func) %s %s', fn, e);
+                    console.log('timer error 2 (fn is func) %s %s', fn, e);
                 } finally {
                     clearInterval(num);
                 }
@@ -5872,7 +6001,7 @@ setTimeout = function(fn, time){
         //console.log("Creating timer number %s", num);
         $timers[num] = new Timer(tfn, time);
         $timers[num].start();
-    });
+    })();
     return num;
 };
 
@@ -5890,16 +6019,16 @@ setInterval = function(fn, time){
     if (typeof fn == 'string') {
         var fnstr = fn;
         fn = function() {
-            Envjs.eval(fnstr);
+            Envjs.eval(window, fnstr);
         };
     }
     var num;
-    $timers.lock(function(){
+    (function(){
         num = $timers.length+1;
         //Envjs.debug("Creating timer number "+num);
         $timers[num] = new Timer(fn, time);
         $timers[num].start();
-    });
+    })();
     return num;
 };
 
@@ -5909,12 +6038,12 @@ setInterval = function(fn, time){
  */
 clearInterval = clearTimeout = function(num){
     //console.log("clearing interval "+num);
-    $timers.lock(function(){
+    (function(){
         if ( $timers[num] ) {
             $timers[num].stop();
             delete $timers[num];
         }
-    });
+    })();
 };
 
 // wait === null/undefined: execute any timers as they fire,
@@ -5933,13 +6062,19 @@ Envjs.wait = function(wait) {
     var delta_wait,
         start = Date.now(),
         was_running = EVENT_LOOP_RUNNING;
-
+/*
+    if (wait === null || wait === undefined)
+    {
+        wait = 0;
+    }
+    */
     if (wait < 0) {
         delta_wait = -wait;
         wait = 0;
     }
     EVENT_LOOP_RUNNING = true;
-    if (wait !== 0 && wait !== null && wait !== undefined){
+    
+    if ((wait !== 0) && (wait !== null) && (wait !== undefined)){
         wait += Date.now();
     }
 
@@ -5954,7 +6089,7 @@ Envjs.wait = function(wait) {
     for (;;) {
         //console.log('timer loop');
         earliest = sleep = goal = now = nextfn = null;
-        $timers.lock(function(){
+        (function(){
             for(index in $timers){
                 if( isNaN(index*0) ) {
                     continue;
@@ -5966,7 +6101,7 @@ Envjs.wait = function(wait) {
                     earliest = timer;
                 }
             }
-        });
+        })();
         //next sleep time
         sleep = earliest && earliest.at - Date.now();
         if ( earliest && sleep <= 0 ) {
@@ -6303,7 +6438,15 @@ __extend__(HTMLDocument.prototype, {
         case "UL":
             node = new HTMLUListElement(this);break;
         default:
-            node = new HTMLUnknownElement(this);
+            if (tagName.indexOf("IFRAME") >= 0 )
+            {
+                console.log("IFRAME createElement (2) %s", this);
+                node = new HTMLIFrameElement(this)
+            }
+            else
+            {
+                node = new HTMLUnknownElement(this);
+            }
         }
         // assign values to properties (and aliases)
         node.nodeName  = tagName;
@@ -6538,15 +6681,7 @@ Aspect.around({
         //changes to src attributes
         return node;
     }
-    /*
-    if (node.tagName.indexOf("FRAME") >= 0 )
-    {
-        console.log("Aspect around append child " + node.tagName);
-        printStackTrace();
-        //throw "Aspect around append child " + node.tagName;
-        node.nodeName = "IFRAME";
-    }
-    */
+
     //console.log('appended html element %s %s %s',
     //             node.namespaceURI, node.nodeName, node);
     switch(doc.parsing){
@@ -6815,7 +6950,7 @@ var __eval__ = function(script, node){
     if (!script == ""){
         // don't assemble environment if no script...
         try{
-            Envjs.eval(script, node);
+            Envjs.eval(node, script, node + "");
         }catch(e){
             console.log('error evaluating (__eval__) %s', e);
         }
@@ -7261,14 +7396,12 @@ __extend__(HTMLElement.prototype, {
         // a simple work around between xml and html serialization via
         // XMLSerializer (which uppercases html tags) and innerHTML (which
         // lowercases tags)
-
         var ret = "",
             ns = "",
             name = (this.tagName+"").toLowerCase(),
             attrs,
             attrstring = "",
             i;
-
 
         // serialize namespace declarations
         if (this.namespaceURI){
@@ -7287,17 +7420,14 @@ __extend__(HTMLElement.prototype, {
             attrstring += " "+attrs[i].name+'="'+attrs[i].xml+'"';
         }
 
-        if (name === 'iframe')
-        {
-            ret += "<" + name + ns + attrstring +">" + this.childNodes.length + "</" + name + ">";
-        }
-        else if(this.hasChildNodes())
+        if(this.hasChildNodes())
         {
             // serialize this Element
             ret += "<" + name + ns + attrstring +">";
             for(i=0;i< this.childNodes.length;i++){
-                ret += this.childNodes[i].xhtml ?
-                    this.childNodes[i].xhtml :
+                var sXhtml = this.childNodes[i].xhtml;
+                ret += sXhtml ?
+                    sXhtml :
                     this.childNodes[i].xml;
             }
             ret += "</" + name + ">";
@@ -8458,50 +8588,6 @@ __extend__(HTMLFrameElement.prototype, {
         return '[object HTMLFrameElement]';
     },
     
-    get xhtml() {
-        // HTMLDocument.xhtml is non-standard
-        // This is exactly like Document.xml except the tagName has to be
-        // lower cased.  I dont like to duplicate this but its really not
-        // a simple work around between xml and html serialization via
-        // XMLSerializer (which uppercases html tags) and innerHTML (which
-        // lowercases tags)
-
-        var ret = "",
-            ns = "",
-            name = (this.tagName+"").toLowerCase(),
-            attrs,
-            attrstring = "",
-            i;
-
-        // serialize namespace declarations
-        if (this.namespaceURI){
-            if((this === this.ownerDocument.documentElement) ||
-               (!this.parentNode) ||
-               (this.parentNode &&
-                (this.parentNode.namespaceURI !== this.namespaceURI))) {
-                ns = ' xmlns' + (this.prefix ? (':' + this.prefix) : '') +
-                    '="' + this.namespaceURI + '"';
-            }
-        }
-
-        // serialize Attribute declarations
-        attrs = this.attributes;
-        for(i=0;i< attrs.length;i++){
-            attrstring += " "+attrs[i].name+'="'+attrs[i].xml+'"';
-        }
-
-        if (this.contentDocument && this.contentDocument.innerHTML && this.contentDocument.innerHTML > 0)
-        {
-            ret += "<" + name + ns + attrstring +">" + this.contentDocument.innerHTML + "</" + name + ">";
-        }
-        else{
-
-                ret += "<" + name + ns + attrstring +"/>";
-        }
-        
-        return ret;
-    },
-    
     
     onload: HTMLEvents.prototype.onload
 });
@@ -8653,7 +8739,47 @@ __extend__(HTMLIFrameElement.prototype, {
     },
     toString: function(){
         return '[object HTMLIFrameElement]';
-    }
+    },
+    get xhtml() {
+        // HTMLDocument.xhtml is non-standard
+        // This is exactly like Document.xml except the tagName has to be
+        // lower cased.  I dont like to duplicate this but its really not
+        // a simple work around between xml and html serialization via
+        // XMLSerializer (which uppercases html tags) and innerHTML (which
+        // lowercases tags)
+
+        var ret = "",
+            ns = "",
+            name = (this.tagName+"").toLowerCase(),
+            attrs,
+            attrstring = "",
+            i;
+
+        //SHJSTerm(SHJSTerm.COMMAND_LOG, {message:"IFRAME GETTER XHTML " + this.getAttribute("id")});
+
+
+        // serialize namespace declarations
+        if (this.namespaceURI){
+            if((this === this.ownerDocument.documentElement) ||
+               (!this.parentNode) ||
+               (this.parentNode &&
+                (this.parentNode.namespaceURI !== this.namespaceURI))) {
+                ns = ' xmlns' + (this.prefix ? (':' + this.prefix) : '') +
+                    '="' + this.namespaceURI + '"';
+            }
+        }
+
+        // serialize Attribute declarations
+        attrs = this.attributes;
+        for(i=0;i< attrs.length;i++){
+            attrstring += " "+attrs[i].name+'="'+attrs[i].xml+'"';
+        }
+
+        ret += "<" + name + ns + attrstring +">" + this.contentDocument.innerHTML + "</" + name + ">";
+        
+        return ret;
+    },
+        
 });
 
 /**
@@ -11703,7 +11829,7 @@ HTMLParser.parseDocument = function(htmlstring, htmldoc){
     //console.log('HTMLParser.parseDocument %s', htmldoc.async);
     htmldoc.parsing = true;
     Envjs.parseHtmlDocument(htmlstring, htmldoc, htmldoc.async, null, null);
-    //Envjs.wait(-1);
+    Envjs.wait();
     return htmldoc;
 };
 HTMLParser.parseFragment = function(htmlstring, element){
@@ -11787,7 +11913,7 @@ var __clearFragmentCache__ = function(){
  */
 __extend__(Document.prototype, {
     loadXML : function(xmlString) {
-        console.log('Parser::Document.loadXML - %s', xmlString);
+        //console.log('Parser::Document.loadXML - %s', xmlString);
         // create Document
         if(this === document){
             //$debug("Setting internal window.document");
@@ -11802,7 +11928,7 @@ __extend__(Document.prototype, {
 
             XMLParser.parseDocument(xmlString, this);
             
-            Envjs.wait(-1);
+            Envjs.wait();
         } catch (e) {
             //$error(e);
         }
@@ -11832,7 +11958,7 @@ __extend__(HTMLDocument.prototype, {
      * http://dev.w3.org/html5/spec/Overview.html#document.write
      */
     write: function(htmlstring) {
-        console.log('writing doc - %s', htmlstring);
+        //console.log('writing doc - %s', htmlstring);
         this.open();
         this._writebuffer.push(htmlstring);
     },
@@ -11841,7 +11967,7 @@ __extend__(HTMLDocument.prototype, {
      * http://dev.w3.org/html5/spec/Overview.html#dom-document-writeln
      */
     writeln: function(htmlstring) {
-        console.log('writingln doc - %s', htmlstring);
+        //console.log('writingln doc - %s', htmlstring);
         this.open();
         this._writebuffer.push(htmlstring + '\n');
     }
@@ -12028,9 +12154,10 @@ var __elementPopped__ = function(ns, name, node){
     }//switch on parsing
 };
 
+
 __extend__(HTMLElement.prototype,{
     set innerHTML(html){   
-        console.log("Setting HTMLElement.innerHTML %s", html);
+        //console.log("Setting HTMLElement.innerHTML %s", html);
         HTMLParser.parseFragment(html, this);
     }
 });
@@ -12721,6 +12848,7 @@ var __exchangeHTMLDocument__ = function(doc, text, url) {
             console.log('document \n %s', doc.documentElement.outerHTML);
         } catch (e) {
             // swallow
+            console.log(e);
         }
         doc = new HTMLDocument(new DOMImplementation(), doc.ownerWindow);
         html =    doc.createElement('html');
@@ -13396,6 +13524,7 @@ Window = function(scope, parent, opener){
     scope.__defineGetter__('window', function(){
         return scope;
     });
+    
 
     var $uuid = new Date().getTime()+'-'+Math.floor(Math.random()*1000000000000000);
     __windows__[$uuid] = scope;
@@ -13411,7 +13540,7 @@ Window = function(scope, parent, opener){
 
     // read only reference to the Document object
     var $document = new HTMLDocument($htmlImplementation, scope);
-
+    
     // A read-only reference to the Window object that contains this window
     // or frame.  If the window is a top-level window, parent refers to
     // the window itself.  If this window is a frame, this property refers
@@ -13479,6 +13608,11 @@ Window = function(scope, parent, opener){
 
     // a read/write string that specifies the current status line.
     var $status = '';
+
+
+    var $__timers__ = [];
+    
+    scope.EVENT_LOOP_RUNNING = false;
 
     __extend__(scope, EventTarget.prototype);
 
@@ -13676,7 +13810,8 @@ Window = function(scope, parent, opener){
         onunload: function(){},
         get guid(){
             return $uuid;
-        }
+        },
+        get $timers(){return $__timers__;}
     });
 
 };
@@ -13735,3 +13870,82 @@ function printStackTrace() {
   }
   
 }
+
+
+/* for correct this must be used like __debugInput__.call/apply(this) */
+var __debugInput__ = function ()
+{
+    var promptMsg = "Please enter javascript ('ok!' to finish) and press 'Run':";
+    SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data: promptMsg});
+    var js = SHJSTerm(SHJSTerm.COMMAND_READ_JS).data;
+    while (js.trim().toLowerCase() !== "ok!")
+    {
+        SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data: "Running js: " + js});
+        try
+        {
+            eval(js);
+        }
+        catch (e)
+        {
+            SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data: "Error running js: " + e});
+        }
+        SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data: "Command complete."});
+        SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data: promptMsg});
+        js = SHJSTerm(SHJSTerm.COMMAND_READ_JS).data;
+    }
+};
+
+var __debugInputMacroStr1__ = "this.__debugInputLocalFunction__ = " + __debugInput__ + ";";
+var __debugInputMacro__ = "eval(__debugInputMacroStr1__);this.__debugInputLocalFunction__();";
+
+
+
+function __dumpObject__(o, maxLevel, currLevel, showGettersAndSetters, label, showFunction)
+{
+    if (!currLevel) currLevel = 0;
+    if (!maxLevel) maxLevel = 1;
+    if (currLevel >= maxLevel) return "";
+    var pref = "";
+    if (label) pref += label;
+    for (var i = 0; i <= currLevel; i++)
+    {
+        pref += "    ";
+    }
+    var res = pref + typeof o + ": \r\n";
+    if (typeof o === "function" && showFunction)
+    {
+        res += pref + o + "\r\n";
+    }
+    pref += "    ";
+    for ( var i in o ) {
+        var g = o.__lookupGetter__(i), s = o.__lookupSetter__(i);
+        if (showGettersAndSetters && (g || s )) {
+            if ( g ) { res += pref + "get " + i + " = " + (showFunction?g:"(function)") + "\r\n";}
+            if ( s ) { res += pref + "set " + i + " = " + (showFunction?s:"(function)") + "\r\n";}
+        } else {
+            var txt;
+            if ((typeof o[i] === "function") && !showFunction)
+            {
+                txt = "(function)";
+            }
+            else if ((typeof o[i] === "function") && showFunction)
+            {
+                txt = o[i] + "";
+            }
+            else
+            {
+                txt = o[i] + "";
+            }
+            res += pref + i + " (" + typeof o[i] + ") = " + txt + "\r\n";
+            if (typeof o[i] === "object")
+            {
+                res += __dumpObject__(o[i], maxLevel, currLevel + 1, showGettersAndSetters, label, showFunction) + "\r\n";
+            }
+        }
+    } return res;
+}
+
+
+Object.prototype.__defineGetter__("__envguid__", function(){if(!this.__envguid__value){this.__envguid__value = Math.random().toString(36).substring(2)}return this.__envguid__value;});
+Object.prototype.__defineSetter__("__envguid__", function(v){this.__envguid__value = v;});
+

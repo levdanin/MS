@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using MagicSubmitter;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Text.RegularExpressions;
 
 namespace WindowsFormsApplication1
 {
@@ -61,6 +62,7 @@ namespace WindowsFormsApplication1
                     string COMMAND_HTTP_POST = "HTTP_POST";
                     string COMMAND_SET_COOKIES = "SET_COOKIES";
                     string COMMAND_GET_COOKIES = "GET_COOKIES";
+                    string COMMAND_READ_JS = "READ_JS";
                     string DELIMITER_OUTPUT = "<<<";
                     string DELIMITER_INPUT = ">>>";
                     string RESULT_OK = "OK";
@@ -185,6 +187,22 @@ namespace WindowsFormsApplication1
                         }
                     };
 
+                    System.Func<string, string, string> updateContent = (string url, string cont) =>
+                    {
+                        if (url.Contains("recaptcha__uk.js"))
+                        {
+                            cont = Regex.Replace(cont, @"return\s+a\.call\s*\(\s*b\.src\s*\,\s*b\.Db\s*\,\s*c\s*\)",
+                                        @"console.log(__dumpObject__(a, 1, null, null,""obj a""));"
+                                        + @"console.log(__dumpObject__(b, 1, null, null,""obj b""));"
+                                        + @"console.log(__dumpObject__(b.src, 1, null, null,""obj b.src""));"
+                                        + @"console.log(__dumpObject__(b.Db, 1, null, null,""obj b.Db""));"
+                                        + @"console.log(__dumpObject__(c, 1, null, null, ""obj c""));"
+                                        + @"eval(__debugInputMacro__);"
+                                        + @"return a.call(b.src,b.Db,c);");
+                        }
+                        return cont;
+                    };
+
                     System.Diagnostics.Process jsProc = new System.Diagnostics.Process();
                     jsProc.StartInfo.FileName = System.IO.Directory.GetCurrentDirectory() + @"\xulrunner\js.exe";
                     if (!System.IO.File.Exists(jsProc.StartInfo.FileName))
@@ -268,7 +286,10 @@ namespace WindowsFormsApplication1
                                 }
                                 else if (lineParts[1] == COMMAND_HTTP_GET)
                                 {
-                                    jsProc.StandardInput.WriteLine(processor.GotoPageNoSet(processor.GetJsonVal("url", lineParts[2])));
+                                    string url = processor.GetJsonVal("url", lineParts[2]);
+                                    string cont = processor.GotoPageNoSet(url);
+                                    cont = updateContent(url, cont);
+                                    jsProc.StandardInput.WriteLine(cont);
                                 }
                                 else if (lineParts[1] == COMMAND_SLEEP)
                                 {
@@ -291,9 +312,15 @@ namespace WindowsFormsApplication1
                                         fpath = fpath.Substring(7);
                                     }
                                     string cont;
-                                    if (fpath.StartsWith("http://") || fpath.StartsWith("https://"))
+                                    if (fpath.StartsWith("http://") || fpath.StartsWith("https://") || fpath.StartsWith("//"))
                                     {
-                                        cont = processor.GotoPageNoSet(fpath);
+                                        if (fpath.StartsWith("//"))
+                                        {
+                                            fpath = "http:" + fpath;
+                                        }
+                                        string url = fpath;
+                                        cont = processor.GotoPageNoSet(url);
+                                        cont = updateContent(url, cont);
                                     }
                                     else if (System.IO.File.Exists(fpath))
                                     {
@@ -338,7 +365,16 @@ namespace WindowsFormsApplication1
                                     JObject xhr = (JObject)inObj["xhr"];
                                     string data = (string)inObj["data"];
                                     JObject resp = runHttpRequest(xhr, data);
+                                    if (((string)xhr["method"]).ToLower() == "get")
+                                    {
+                                        resp["responseText"] = updateContent((string)xhr["url"], (string)resp["responseText"]);
+                                    }
                                     jsProc.StandardInput.WriteLine(JsonConvert.SerializeObject(resp));
+                                }
+                                else if (lineParts[1] == COMMAND_READ_JS)
+                                {
+                                    string inputJs = form.getInputJS();
+                                    jsProc.StandardInput.WriteLine(inputJs);
                                 }
                                 else
                                 {
@@ -361,6 +397,7 @@ namespace WindowsFormsApplication1
                     }
                     catch (Exception e) { }
                     _terminateSignalRecieved = false;
+                    _processIsPaused = false;
                     return notCommandText;
                 };
             string response = runJS();

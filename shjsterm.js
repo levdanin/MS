@@ -14,6 +14,7 @@ SHJSTerm.COMMAND_HTTP_GET = 'HTTP_GET';
 SHJSTerm.COMMAND_HTTP_POST = 'HTTP_POST';
 SHJSTerm.COMMAND_SET_COOKIES = 'SET_COOKIES';
 SHJSTerm.COMMAND_GET_COOKIES = 'GET_COOKIES';
+SHJSTerm.COMMAND_READ_JS = 'READ_JS';
 SHJSTerm.DELIMITER_OUTPUT = '<<<';
 SHJSTerm.DELIMITER_INPUT = '>>>';
 SHJSTerm.RESULT_OK = 'OK';
@@ -42,7 +43,7 @@ SHJSTerm.sendCommand = function(command, options)
     }        
     else if (readLine.indexOf(this.DELIMITER_INPUT + this.RESULT_TERMINATE + this.DELIMITER_INPUT) === 0)
     {
-        print("Latest read text:");
+        print("********** Latest read text:");
         print(readText);
         var msg = readLine.substring((this.DELIMITER_INPUT + this.RESULT_TERMINATE + this.DELIMITER_INPUT).length);
         print("********** ABORTED: " + msg + " **********");
