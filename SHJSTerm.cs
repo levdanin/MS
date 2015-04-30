@@ -211,7 +211,12 @@ namespace WindowsFormsApplication1
                             /*cont = Regex.Replace(cont, @"Object\.extend\s*\(\s*a\.Element\s*\,\s*\{\s*extend\s*\:\s*r", "huyeval(__debugInputMacro__);Object.extend(a.Element,{extend:r");*/
                             cont = "";
                         }
-                        
+
+                        else if (url.Contains("cb=gapi.loaded_2"))
+                        {
+                            cont = Regex.Replace(cont, @"g\s*\=\s*window\.document\.body\s*\;", "g=window.top.document.body;");
+                        }
+
                         return cont;
                     };
 

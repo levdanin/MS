@@ -239,7 +239,7 @@ Envjs.eval = function(context, source, name, useSimpleEval){
     }
     else if (isWindowContext && (context !== window))
     {
-        console.log("evaluating script '%s' in window %s context: %s", name, context, source.substring(0, 100) + " ...");
+        console.log("evaluating script '%s' in window [%s] context: %s", name, context.guid, source.substring(0, 100) + " ...");
         context = Envjs.sandbox(context);
         Envjs.contexts[context.location.href] = context;
         evalcx(source, context);
