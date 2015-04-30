@@ -383,6 +383,7 @@ Envjs.loadLocalScript = function(script, useSimple){
         xhr.send(null, false);
     } catch(e) {
         console.log("could not load script %s \n %s, %s:%s", filename, e, e.fileName, e.lineNumber );
+        printStackTrace();
         Envjs.onScriptLoadError(script, e);
         return false;
     }
@@ -2173,6 +2174,7 @@ __extend__(Node.prototype, {
                 //printStackTrace();
                 //throw 'INSERT BEFORE - ' + newChild.nodeName + ' | THIS - ' + newChild.getAttribute("src");
                 newChild.nodeName = "iframe";
+                /*
                 if (this.ownerDocument !== window.top.document)
                 {
                     window.top.document.body.appendChild(newChild);
@@ -2181,11 +2183,9 @@ __extend__(Node.prototype, {
                 {
                     this.appendChild(newChild);
                 }
+                */
             }
-            else
-            {
-                this.appendChild(newChild);
-            }
+            this.appendChild(newChild);
             return newChild;
         }
 
@@ -6036,12 +6036,12 @@ setTimeout = function(fn, time){
                 } catch (e) {
                     console.log('timer error 2 (fn is func) %s %s', fn, e);
                 } finally {
-                    console.log("Timer executed: %s", fn + "");
+                    //console.log("Timer executed: %s", fn + "");
                     clearInterval(num);
                 }
             };
         }
-        console.log("Creating timer number %s, src: %s", num, fn+"");
+        //console.log("Creating timer number %s, src: %s", num, fn+"");
         $timers[num] = new Timer(tfn, time);
         $timers[num].start();
     })();
@@ -6071,7 +6071,7 @@ setInterval = function(fn, time){
                 } catch (e) {
                     console.log('interval error 1 (fn is str) %s %s', fn, e);
                 } finally {
-                    clearInterval(num);
+                    //clearInterval(num);
                 }
             };
         } else {
@@ -6081,11 +6081,11 @@ setInterval = function(fn, time){
                 } catch (e) {
                     console.log('interval error 2 (fn is func) %s %s', fn, e);
                 } finally {
-                    clearInterval(num);
+                    //clearInterval(num);
                 }
             };
         }
-        console.log("Creating interval timer number %s, src: %s", num, fn+"");
+        //console.log("Creating interval timer number %s, src: %s", num, fn+"");
         $timers[num] = new Timer(fn, time);
         $timers[num].start();
     })();
@@ -6237,7 +6237,7 @@ Envjs.wait = function(wait) {
         Envjs.sleep(sleep);
         totalSleep += sleep;
         
-        if (totalSleep > interval*3 || totalRun > 5)
+        if (((wait < 0 || !wait) && (totalSleep > interval*5)) || (wait && totalSleep > wait))
         {
             break;
         }
@@ -6837,7 +6837,7 @@ Aspect.around({
                         var nodeSrc = node.getAttribute('src');
                         console.log("IFRAME in Aspect.around - src %s", nodeSrc);
                         node.contentWindow = { };
-                        new Window(node.contentWindow, window.top);
+                        /*new Window(node.contentWindow, window.top);*/
                         node.contentDocument = new HTMLDocument(new DOMImplementation(), node.contentWindow);
                         node.contentWindow.document = node.contentDocument;
                         try{
@@ -12137,7 +12137,7 @@ var __elementPopped__ = function(ns, name, node){
                                     var nodeSrc = node.getAttribute('src');
                                     console.log("IFRAME in __elementPopped__ %s", node.name);
                                     node.contentWindow = { };
-                                    new Window(node.contentWindow, window.top);
+                                    /*new Window(node.contentWindow, window.top);*/
                                     node.contentDocument = new HTMLDocument(new DOMImplementation(), node.contentWindow);
                                     node.contentWindow.document = node.contentDocument;
                                     try{
