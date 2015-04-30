@@ -229,26 +229,45 @@ Envjs.contexts = {'global': __this__};
  * @param {Object} source
  * @param {Object} name
  */
-Envjs.eval = function(context, source, name){
+Envjs.eval = function(context, source, name, useSimpleEval){
     var isWindowContext = (context + "") === "[Window]";
     if (context && !isWindowContext)
     {
         console.log("evaluating script '%s' in non-window context %s: %s", name, context, source.substring(0, 100) + " ...");
-        context.__thisEval__ = function(src){eval(src)};
+        context.__thisEval__ = function(src){evalcx(src, window)};
         context.__thisEval__(source);
     }
     else if (isWindowContext && (context !== window))
     {
-        console.log("evaluating script '%s' in window context %s: %s", name, context, source.substring(0, 100) + " ...");
+        console.log("evaluating script '%s' in window %s context: %s", name, context, source.substring(0, 100) + " ...");
         context = Envjs.sandbox(context);
-        Envjs.contexts[context.__envguid__] = context;
+        Envjs.contexts[context.location.href] = context;
         evalcx(source, context);
+    }
+    else if (context === window)
+    {
+        console.log("evaluating script '%s' in current context: %s", name, source.substring(0, 100) + " ...");
+        //
+        //window.__thisEval__ = function(src){eval(src)};
+        //window.__thisEval__(source);
+        //evalcx("(function(){" + source + "})()", window);
+        evaluate(source);
+        if (useSimpleEval)
+        {
+            //eval(source);
+        }
+        else
+        {
+            //evalcx(source, window);
+        }
+        //evalcx(source, window);
     }
     else
     {
-        console.log("evaluating script '%s' in current context: %s", name, source.substring(0, 100) + " ...");
+        console.log("evaluating script '%s' in inline context: %s", name, source.substring(0, 100) + " ...");
         eval(source);
-    }
+    }       
+    
     /*
     try
     {
@@ -278,7 +297,7 @@ __processedScriptsSrc__ = {};
  * @param {Object} script
  * @param {Object} parser
  */
-Envjs.loadLocalScript = function(script){
+Envjs.loadLocalScript = function(script, useSimple){
     //console.log("loading script %s", script);
     var types,
     src,
@@ -353,7 +372,8 @@ Envjs.loadLocalScript = function(script){
                 Envjs.eval(
                     script.ownerDocument.ownerWindow,
                     xhr.responseText,
-                    filename
+                    filename,
+                    useSimple
                 );
                 script.alreadyProcessed = true;
                 //__processedScriptsSrc__[script.src] = true;
@@ -376,6 +396,7 @@ Envjs.loadLocalScript = function(script){
             }
         }
     }
+    
     return true;
 };
 
@@ -2152,10 +2173,20 @@ __extend__(Node.prototype, {
                 //printStackTrace();
                 //throw 'INSERT BEFORE - ' + newChild.nodeName + ' | THIS - ' + newChild.getAttribute("src");
                 newChild.nodeName = "iframe";
+                if (this.ownerDocument !== window.top.document)
+                {
+                    window.top.document.body.appendChild(newChild);
+                }
+                else
+                {
+                    this.appendChild(newChild);
+                }
             }
-            
-            this.appendChild(newChild);
-            return this.newChild;
+            else
+            {
+                this.appendChild(newChild);
+            }
+            return newChild;
         }
 
         // test for exceptions
@@ -4663,7 +4694,15 @@ __extend__(Document.prototype,{
             throw(new DOMException(DOMException.INVALID_CHARACTER_ERR));
         }
         var node = new Element(this);
-        node.nodeName = tagName;
+        if (tagName.indexOf("<") === 0)
+        {
+            HTMLParser.parseFragment(tagName, node);
+            node = node.firstChild;
+        }
+        else
+        {
+            node.nodeName = tagName;
+        }
         return node;
     },
     createElementNS : function(namespaceURI, qualifiedName) {
@@ -5406,7 +5445,8 @@ function __removeEventListener__(target, type, fn, phase){
 
 var __eventuuid__ = 0;
 function __dispatchEvent__(target, event, bubbles){
-
+    Envjs.tick();
+    
     if (!event.uuid) {
         event.uuid = __eventuuid__++;
     }
@@ -5956,7 +5996,7 @@ Timer.normalize = function(time) {
         time = 0;
     }
 
-    if ( EVENT_LOOP_RUNNING && time < Timer.MIN_TIME ) {
+    if ( TIMER_LOOP_RUNNING && time < Timer.MIN_TIME ) {
         time = Timer.MIN_TIME;
     }
     return time;
@@ -5974,7 +6014,7 @@ setTimeout = function(fn, time){
     var num;
     time = Timer.normalize(time);
     (function(){
-        num = $timers.length+1;
+        num = $timers.length;
         var tfn;
         if (typeof fn == 'string') {
             tfn = function() {
@@ -5988,17 +6028,20 @@ setTimeout = function(fn, time){
                 }
             };
         } else {
-            tfn = function() {
+            tfn = function(debug1, debug2) {
                 try {
+                    if (debug1) eval(debug1);
                     fn();
+                    if (debug2) eval(debug2);
                 } catch (e) {
                     console.log('timer error 2 (fn is func) %s %s', fn, e);
                 } finally {
+                    console.log("Timer executed: %s", fn + "");
                     clearInterval(num);
                 }
             };
         }
-        //console.log("Creating timer number %s", num);
+        console.log("Creating timer number %s, src: %s", num, fn+"");
         $timers[num] = new Timer(tfn, time);
         $timers[num].start();
     })();
@@ -6016,16 +6059,33 @@ setInterval = function(fn, time){
     if ( time < 10 ) {
         time = 10;
     }
-    if (typeof fn == 'string') {
-        var fnstr = fn;
-        fn = function() {
-            Envjs.eval(window, fnstr);
-        };
-    }
     var num;
-    (function(){
-        num = $timers.length+1;
-        //Envjs.debug("Creating timer number "+num);
+    (function(){        
+        num = $timers.length;
+        var tfn;
+        if (typeof fn == 'string') {
+            tfn = function() {
+                try {
+                    // eval in global scope
+                    Envjs.eval(window, fn);
+                } catch (e) {
+                    console.log('interval error 1 (fn is str) %s %s', fn, e);
+                } finally {
+                    clearInterval(num);
+                }
+            };
+        } else {
+            tfn = function() {
+                try {
+                    fn();
+                } catch (e) {
+                    console.log('interval error 2 (fn is func) %s %s', fn, e);
+                } finally {
+                    clearInterval(num);
+                }
+            };
+        }
+        console.log("Creating interval timer number %s, src: %s", num, fn+"");
         $timers[num] = new Timer(fn, time);
         $timers[num].start();
     })();
@@ -6037,15 +6097,33 @@ setInterval = function(fn, time){
  * @param {Object} num
  */
 clearInterval = clearTimeout = function(num){
-    //console.log("clearing interval "+num);
-    (function(){
+    //console.log("clearing interval %s (of %s) : %s", num, $timers.length, $timers[num]);
+    var res = (function(){
         if ( $timers[num] ) {
             $timers[num].stop();
-            delete $timers[num];
+            return delete $timers[num];
         }
+        {
+            //console.log("timer %s was not found  when clearing interval", num);
+        }
+        return false;
     })();
+    if (res)
+    {
+        //console.log("cleared interval %s (of %s) : %s", num, $timers.length, $timers[num]);
+    }
+    else
+    {
+        //console.log("was not cleared interval %s (of %s) : %s", num, $timers.length, $timers[num]);
+    }
+        
 };
 
+
+Envjs.tick = function(){
+    if (LAST_TIMER_EXECUTED + 1000 < Date.now()) return false;
+    Envjs.wait(100);
+}
 // wait === null/undefined: execute any timers as they fire,
 //  waiting until there are none left
 // wait(n) (n > 0): execute any timers as they fire until there
@@ -6056,23 +6134,20 @@ clearInterval = clearTimeout = function(num){
 //  in the future
 //
 // TODO: make a priority queue ...
-
 Envjs.wait = function(wait) {
-    //console.log('wait %s', wait);
+    
+    if (TIMER_LOOP_RUNNING) return false;
+    
+    //console.log("Wait for %s ms started", wait);
     var delta_wait,
         start = Date.now(),
-        was_running = EVENT_LOOP_RUNNING;
-/*
-    if (wait === null || wait === undefined)
-    {
-        wait = 0;
-    }
-    */
+        was_running = TIMER_LOOP_RUNNING;
+
     if (wait < 0) {
         delta_wait = -wait;
         wait = 0;
     }
-    EVENT_LOOP_RUNNING = true;
+    TIMER_LOOP_RUNNING = true;
     
     if ((wait !== 0) && (wait !== null) && (wait !== undefined)){
         wait += Date.now();
@@ -6085,16 +6160,16 @@ Envjs.wait = function(wait) {
         goal,
         now,
         nextfn;
+    var totalSleep = 0, totalRun = 0;
 
     for (;;) {
         //console.log('timer loop');
         earliest = sleep = goal = now = nextfn = null;
         (function(){
             for(index in $timers){
-                if( isNaN(index*0) ) {
+                if( isNaN(index*0) || !(timer = $timers[index])) {
                     continue;
                 }
-                timer = $timers[index];
                 // determine timer with smallest run-at time that is
                 // not already running
                 if( !timer.running && ( !earliest || timer.at < earliest.at) ) {
@@ -6114,6 +6189,7 @@ Envjs.wait = function(wait) {
                 console.log('timer error (in wait) %s %s', nextfn, e);
             } finally {
                 earliest.running = false;
+                totalRun++;
             }
             goal = earliest.at + earliest.interval;
             now = Date.now();
@@ -6122,7 +6198,10 @@ Envjs.wait = function(wait) {
             } else {
                 earliest.at = goal;
             }
+            /*
+            if (totalRun > 100 && wait > 0) break;
             continue;
+            */
         }
 
         // bunch of subtle cases here ...
@@ -6150,14 +6229,24 @@ Envjs.wait = function(wait) {
 
         // Related to ajax threads ... hopefully can go away ..
         var interval =  Envjs.WAIT_INTERVAL || 100;
-        if ( !sleep || sleep > interval ) {
+        if ( !sleep || sleep > interval || sleep < 0 ) {
             sleep = interval;
         }
+        //sleep = 100;
         //console.log('sleeping %s', sleep);
         Envjs.sleep(sleep);
+        totalSleep += sleep;
+        
+        if (totalSleep > interval*3 || totalRun > 5)
+        {
+            break;
+        }
+        
 
     }
-    EVENT_LOOP_RUNNING = was_running;
+    //console.log("Total was waiting %s ms and %s timers were executed", totalSleep, totalRun);
+    TIMER_LOOP_RUNNING = was_running;
+    LAST_TIMER_EXECUTED = Date.now();
 };
 
 
@@ -6438,10 +6527,19 @@ __extend__(HTMLDocument.prototype, {
         case "UL":
             node = new HTMLUListElement(this);break;
         default:
+            /*
             if (tagName.indexOf("IFRAME") >= 0 )
             {
                 console.log("IFRAME createElement (2) %s", this);
                 node = new HTMLIFrameElement(this)
+            }
+            else 
+                */
+            if (tagName.indexOf("<") === 0)
+            {
+                node = new Element(this);
+                HTMLParser.parseFragment(tagName, node);
+                node = node.firstChild;
             }
             else
             {
@@ -6449,7 +6547,10 @@ __extend__(HTMLDocument.prototype, {
             }
         }
         // assign values to properties (and aliases)
-        node.nodeName  = tagName;
+        if (!node.nodeName)
+        {
+            node.nodeName  = tagName;
+        }
         return node;
     },
     createElementNS : function (uri, local) {
@@ -6700,7 +6801,7 @@ Aspect.around({
             node.tagName === 'SCRIPT'/* &&
             this.tagName == 'HEAD'*/) {
             console.log('loading script from Aspect.around when parsing is true %s ', node);
-            okay = Envjs.loadLocalScript(node, null);
+            okay = Envjs.loadLocalScript(node);
         }
         break;
         case false:
@@ -6718,7 +6819,7 @@ Aspect.around({
                         if(this.nodeName.toLowerCase() === 'head'){
                             console.log('loading script from Aspect.around %s ', node);
                             try{
-                                okay = Envjs.loadLocalScript(node, null);
+                                okay = Envjs.loadLocalScript(node);
                                 //console.log('loaded script? %s %s', node.uuid, okay);
                                 // only fire event if we actually had something to load
                                 if ((node.src && node.src.length > 0) || (node.text && node.text.length > 0)){
@@ -6736,6 +6837,7 @@ Aspect.around({
                         var nodeSrc = node.getAttribute('src');
                         console.log("IFRAME in Aspect.around - src %s", nodeSrc);
                         node.contentWindow = { };
+                        new Window(node.contentWindow, window.top);
                         node.contentDocument = new HTMLDocument(new DOMImplementation(), node.contentWindow);
                         node.contentWindow.document = node.contentDocument;
                         try{
@@ -9834,6 +9936,15 @@ __extend__(HTMLScriptElement.prototype, {
         this.setAttribute('type',value);
     },
     onload: HTMLEvents.prototype.onload,
+    /*
+    onload: function()
+    {
+        HTMLEvents.prototype.onload();
+        event = doc.createEvent('HTMLEvents');
+        event.initEvent("readystatechange", false, false );
+        this.dispatchEvent( event, false );
+    },
+    */
     onerror: HTMLEvents.prototype.onerror,
     toString: function() {
         return '[object HTMLScriptElement]';
@@ -11828,7 +11939,7 @@ var __fragmentCache__ = {length:0},
 HTMLParser.parseDocument = function(htmlstring, htmldoc){
     //console.log('HTMLParser.parseDocument %s', htmldoc.async);
     htmldoc.parsing = true;
-    Envjs.parseHtmlDocument(htmlstring, htmldoc, htmldoc.async, null, null);
+    Envjs.parseHtmlDocument(htmlstring, htmldoc, false, null, null);
     Envjs.wait();
     return htmldoc;
 };
@@ -12008,7 +12119,7 @@ var __elementPopped__ = function(ns, name, node){
                                 case 'script':
                                     console.log('loading script from elementpop %s ', node);
                                     try{
-                                        okay = Envjs.loadLocalScript(node, null);
+                                        okay = Envjs.loadLocalScript(node, true);
                                         // console.log('loaded script? %s %s', node.uuid, okay);
                                         // only fire event if we actually had something to load
                                         if ((node.src && node.src.length > 0) || (node.text && node.text.length > 0)){
@@ -12016,6 +12127,7 @@ var __elementPopped__ = function(ns, name, node){
                                             event.initEvent( okay ? "load" : "error", false, false );
                                             node.dispatchEvent( event, false );
                                         }
+                                        console.log('finished loading script from elementpop %s ', node);
                                     }catch(e){
                                         console.log('error loading script html element %s %s %s %e', ns, name, node, e.toString());
                                     }
@@ -12025,6 +12137,7 @@ var __elementPopped__ = function(ns, name, node){
                                     var nodeSrc = node.getAttribute('src');
                                     console.log("IFRAME in __elementPopped__ %s", node.name);
                                     node.contentWindow = { };
+                                    new Window(node.contentWindow, window.top);
                                     node.contentDocument = new HTMLDocument(new DOMImplementation(), node.contentWindow);
                                     node.contentWindow.document = node.contentDocument;
                                     try{
@@ -12152,6 +12265,8 @@ var __elementPopped__ = function(ns, name, node){
         default:
             break;
     }//switch on parsing
+    Envjs.tick();
+    
 };
 
 
@@ -12887,7 +13002,7 @@ var __exchangeHTMLDocument__ = function(doc, text, url) {
                 window.dispatchEvent( event, false );
             }
         } catch (e) {
-            //console.log('window load event failed %s', e);
+            console.log('window load event failed %s', e);
             //swallow
         }
     };  /* closes return {... */
@@ -13228,7 +13343,8 @@ Navigator = function(){
             return [];
         },
         get userAgent(){
-            return this.appCodeName + "/" + this.appVersion + " Resig/20070309 PilotFish/1.2.13";
+            //return this.appCodeName + "/" + this.appVersion + " Resig/20070309 PilotFish/1.2.13";
+            return 'Mozilla/5.0 (Windows NT 6.3; WOW64; rv:28.0) Gecko/20100101 Firefox/28.0';
         },
         javaEnabled : function(){
             return Envjs.javaEnabled;
@@ -13611,8 +13727,8 @@ Window = function(scope, parent, opener){
 
 
     var $__timers__ = [];
-    
-    scope.EVENT_LOOP_RUNNING = false;
+    scope.TIMER_LOOP_RUNNING = false;
+    scope.LAST_TIMER_EXECUTED = null;
 
     __extend__(scope, EventTarget.prototype);
 
@@ -13946,6 +14062,6 @@ function __dumpObject__(o, maxLevel, currLevel, showGettersAndSetters, label, sh
 }
 
 
-Object.prototype.__defineGetter__("__envguid__", function(){if(!this.__envguid__value){this.__envguid__value = Math.random().toString(36).substring(2)}return this.__envguid__value;});
-Object.prototype.__defineSetter__("__envguid__", function(v){this.__envguid__value = v;});
+//Object.prototype.__defineGetter__("__envguid__", function(){if(!this.__envguid__value){this.__envguid__value = Math.random().toString(36).substring(2)}return this.__envguid__value;});
+//Object.prototype.__defineSetter__("__envguid__", function(v){this.__envguid__value = v;});
 

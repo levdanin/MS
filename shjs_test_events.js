@@ -86,7 +86,11 @@ try
                 false, null, null);
     el.dispatchEvent(event);
     
-    console.log("iframe doc innerHTML: " + document.getElementsByTagName('iframe')[0].contentDocument.innerHTML);
+    Envjs.wait();
+    Envjs.wait();
+    
+    console.log("iframe doc innerHTML: " + document.innerHTML);
+    
     
     /*
 

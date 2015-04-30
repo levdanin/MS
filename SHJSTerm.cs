@@ -191,6 +191,7 @@ namespace WindowsFormsApplication1
                     {
                         if (url.Contains("recaptcha__uk.js"))
                         {
+                            /*
                             cont = Regex.Replace(cont, @"return\s+a\.call\s*\(\s*b\.src\s*\,\s*b\.Db\s*\,\s*c\s*\)",
                                         @"console.log(__dumpObject__(a, 1, null, null,""obj a""));"
                                         + @"console.log(__dumpObject__(b, 1, null, null,""obj b""));"
@@ -199,7 +200,18 @@ namespace WindowsFormsApplication1
                                         + @"console.log(__dumpObject__(c, 1, null, null, ""obj c""));"
                                         + @"eval(__debugInputMacro__);"
                                         + @"return a.call(b.src,b.Db,c);");
+                            cont = Regex.Replace(cont, @"throw\s+a\;",
+                                       @"eval(__debugInputMacro__);throw a;");
+                            */
+                            /*cont = Regex.Replace(cont, "(?i)5e3", "50000");*/
                         }
+                            
+                        else if (url.Contains("lib/lib.js"))
+                        {
+                            /*cont = Regex.Replace(cont, @"Object\.extend\s*\(\s*a\.Element\s*\,\s*\{\s*extend\s*\:\s*r", "huyeval(__debugInputMacro__);Object.extend(a.Element,{extend:r");*/
+                            cont = "";
+                        }
+                        
                         return cont;
                     };
 
@@ -256,7 +268,7 @@ namespace WindowsFormsApplication1
                         Application.DoEvents();
                         if (_terminateSignalRecieved)
                         {
-                            jsProc.StandardInput.WriteLine(DELIMITER_INPUT + RESULT_TERMINATE + DELIMITER_INPUT + "terminate signal reciever");
+                            jsProc.StandardInput.WriteLine(DELIMITER_INPUT + RESULT_TERMINATE + DELIMITER_INPUT + "terminate signal recieved");
                             form.log("******************* ABORTED ***********************");
                             form.debug("aborted");
                             break;
@@ -293,7 +305,12 @@ namespace WindowsFormsApplication1
                                 }
                                 else if (lineParts[1] == COMMAND_SLEEP)
                                 {
-                                    System.Threading.Thread.Sleep(Convert.ToInt32(processor.GetJsonVal("millseconds", lineParts[2])));
+                                    string sleepStr = processor.GetJsonVal("millseconds", lineParts[2]);
+                                    int sleepInt = Convert.ToInt32(sleepStr);
+                                    if (sleepInt > 0)
+                                    {
+                                        System.Threading.Thread.Sleep(sleepInt);
+                                    }
                                 }
                                 else if (lineParts[1] == COMMAND_DELETE_FILE)
                                 {
