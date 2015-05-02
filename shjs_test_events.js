@@ -108,6 +108,8 @@ try
 catch (e)
 {
     console.log("Error during test: " + e.toString());
+    
+    eval(__debugInputMacro__);
 }
 
 

@@ -196,7 +196,7 @@ Envjs.sandbox = function(context, parent)
         */
         /* v2 */
         var sandbox = evalcx("");
-        __extend__(sandbox, __this__);
+        //__extend__(sandbox, __this__);
         __extend__(sandbox, context);
         context = sandbox;
 
@@ -256,7 +256,7 @@ Envjs.loadInlineScript = function(script){
     var scriptShort = script.text.substring(0, 100) + " ...";
     if (script.alreadyProcessed)
     {
-        console.log("inline script was processed already " + scriptShort);
+        console.error("inline script was processed already " + scriptShort);
     }
     else
     {
@@ -283,7 +283,7 @@ Envjs.loadLocalScript = function(script, inTopWindow){
     
     if (script.alreadyProcessed)
     {
-        console.log("script was processed already " + (script.src&&script.src.length)?script.src:(script.text.substring(0, 100) + " ..."));
+        console.error("script was processed already " + (script.src&&script.src.length)?script.src:(script.text.substring(0, 100) + " ..."));
         return false;
     }
     /*
@@ -362,7 +362,7 @@ Envjs.loadLocalScript = function(script, inTopWindow){
         };
         xhr.send(null, false);
     } catch(e) {
-        console.log("could not load script %s \n %s, %s:%s", filename, e, e.fileName, e.lineNumber );
+        console.error("could not load script %s \n %s, %s:%s", filename, e, e.fileName, e.lineNumber );
         printStackTrace();
         Envjs.onScriptLoadError(script, e);
         return false;
@@ -588,7 +588,7 @@ Envjs.getCookies = function(url){
             }
             //console.log('set cookies for doc %s', doc.baseURI);
         }catch(e){
-            console.log('cookies not loaded %s', e)
+            console.error('cookies not loaded %s', e)
         };
     }
     var temporary = __cookieString__(Envjs.cookies.temporary, url),
@@ -1453,7 +1453,7 @@ Envjs.loadFrame = function(frame, url){
             frame.contentDocument.location.assign(Envjs.uri(url, frame.ownerDocument.location.toString()));
         }
     } catch(e) {
-        console.log("failed to load frame content: from %s %s", url, e);
+        console.error("failed to load frame content: from %s %s", url, e);
     }   
 };
 
@@ -5942,10 +5942,7 @@ __extend__(Document.prototype, DocumentEvent.prototype);
  * 
  * requires Envjs.wait, Envjs.sleep, Envjs.WAIT_INTERVAL
  */
-var setTimeout,
-    clearTimeout,
-    setInterval,
-    clearInterval;
+var TimerTarget, Timer;
     
 /*
  * Envjs timer.1.2.13 
@@ -5967,7 +5964,7 @@ var setTimeout,
 
 
 //private internal class
-var Timer = function(fn, interval){
+Timer = function(fn, interval){
     this.fn = fn;
     this.interval = interval;
     this.at = Date.now() + interval;
@@ -5995,15 +5992,21 @@ Timer.normalize = function(time) {
 // a setTimeout for the SAX stuff which messes up the world
 Timer.MIN_TIME =  4 /* 0 */;
 
+TimerTarget = function(){};
+
 /**
  * @function setTimeout
  * @param {Object} fn
  * @param {Object} time
  */
-setTimeout = function(fn, time){
+TimerTarget.prototype.$timers = [];
+TimerTarget.prototype.TIMER_LOOP_RUNNING = false;
+TimerTarget.prototype.LAST_TIMER_EXECUTED = null;
+
+TimerTarget.prototype.setTimeout = function(fn, time){
     var num;
     time = Timer.normalize(time);
-        num = window.$timers.length;
+        num = this.$timers.length;
         var tfn;
         if (typeof fn === 'string') {
             tfn = function() {
@@ -6032,12 +6035,12 @@ setTimeout = function(fn, time){
             };
             tfn.fn = fn;
         }
-        if (window !== window.top)
+        if (this !== window.top)
         {
-            console.log("Creating timer in window [%s] number %s, src: %s", window.guid, num, fn+"");
+            console.warn("Creating timer in window [%s] number %s, src: %s", window.guid, num, fn+"");
         }
-        window.$timers[num] = new Timer(tfn, time);
-        window.$timers[num].start();
+        this.$timers[num] = new Timer(tfn, time);
+        this.$timers[num].start();
     return num;
 };
 
@@ -6046,14 +6049,14 @@ setTimeout = function(fn, time){
  * @param {Object} fn
  * @param {Object} time
  */
-setInterval = function(fn, time){
+TimerTarget.prototype.setInterval = function(fn, time){
     //console.log('setting interval %s %s', time, fn.toString().substring(0,64));
     time = Timer.normalize(time);
     if ( time < 10 ) {
         time = 10;
     }
     var num;
-        num = window.$timers.length;
+        num = this.$timers.length;
         var tfn;
         if (typeof fn === 'string') {
             tfn = function() {
@@ -6079,12 +6082,12 @@ setInterval = function(fn, time){
             };
             tfn.fn = fn;
         }
-        if (window !== window.top)
+        if (this !== window.top)
         {
-            console.log("Creating interval timer in window [%s] number %s, src: %s", window.guid, num, fn+"");
+            console.warn("Creating interval timer in window [%s] number %s, src: %s", window.guid, num, fn+"");
         }
-        window.$timers[num] = new Timer(fn, time);
-        window.$timers[num].start();
+        this.$timers[num] = new Timer(fn, time);
+        this.$timers[num].start();
     return num;
 };
 
@@ -6092,12 +6095,12 @@ setInterval = function(fn, time){
  * clearInterval
  * @param {Object} num
  */
-clearInterval = clearTimeout = function(num){
+TimerTarget.prototype.clearInterval = TimerTarget.prototype.clearTimeout = function(num){
     //console.log("clearing interval %s (of %s) : %s", num, $timers.length, $timers[num]);
     var res = (function(){
-        if ( window.$timers[num] ) {
-            window.$timers[num].stop();
-            return delete window.$timers[num];
+        if ( this.$timers[num] ) {
+            this.$timers[num].stop();
+            return delete this.$timers[num];
         }
         {
             //console.log("timer %s was not found  when clearing interval", num);
@@ -6118,16 +6121,16 @@ clearInterval = clearTimeout = function(num){
 
 Envjs.tick = function(wait){
     if (!wait) wait = 100;
-    var contexts = [window.top];
-    for (var i in window.frames)
+    var contexts = [];
+    contexts.push(window.top);
+    for (var i = 0; i < window.top.frames.length; i++)
     {
-        contexts.push(window.frames[i].contentWindow);
+        contexts.push(window.top.frames[i].contentWindow);
     }
-    for (var i in contexts)
+    for (var i = 0; i < contexts.length; i++)
     {
-        var context = contexts[i];
-        if ((context.LAST_TIMER_EXECUTED + 1000 < Date.now()) || context.TIMER_LOOP_RUNNING) continue;
-        Envjs.eval(context, "Envjs.wait(" + wait + ");", "Envjs.tick thread");
+        if ((contexts[i].LAST_TIMER_EXECUTED && contexts[i].LAST_TIMER_EXECUTED + 1000 < Date.now()) || contexts[i].TIMER_LOOP_RUNNING) continue;
+        Envjs.eval(contexts[i], "window.__wait(" + wait + ");", "Envjs.tick thread");
     }
 };
 // wait === null/undefined: execute any timers as they fire,
@@ -9936,7 +9939,7 @@ __extend__(HTMLScriptElement.prototype, {
         this.setAttribute('src',value);
         if (!this.ownerDocument.parsing)
         {
-            console.log("loading local script from src setter %s", this);
+            console.warn("loading local script from src setter %s", this);
             Envjs.loadLocalScript(this);        
         }
     },
@@ -11951,7 +11954,7 @@ HTMLParser.parseDocument = function(htmlstring, htmldoc){
     //console.log('HTMLParser.parseDocument %s', htmldoc.async);
     htmldoc.parsing = true;
     Envjs.parseHtmlDocument(htmlstring, htmldoc, false, null, null);
-    Envjs.wait();
+    Envjs.tick();
     return htmldoc;
 };
 HTMLParser.parseFragment = function(htmlstring, element){
@@ -12050,7 +12053,7 @@ __extend__(Document.prototype, {
 
             XMLParser.parseDocument(xmlString, this);
             
-            Envjs.wait();
+            Envjs.tick();
         } catch (e) {
             //$error(e);
         }
@@ -12967,14 +12970,14 @@ var __exchangeHTMLDocument__ = function(doc, text, url) {
     try {
         doc.baseURI = url;
         HTMLParser.parseDocument(text, doc);
-        Envjs.wait();
+        Envjs.tick();
     } catch (e) {
-        console.error('parsererror %s', e);
+        console.error('__exchangeHTMLDocument__ parsererror %s', e);
         try {
             console.log('document \n %s', doc.documentElement.outerHTML);
         } catch (e) {
             // swallow
-            console.log(e);
+            console.error('__exchangeHTMLDocument__ error: %s', e);
         }
         doc = new HTMLDocument(new DOMImplementation(), doc.ownerWindow);
         html =    doc.createElement('html');
@@ -13013,7 +13016,7 @@ var __exchangeHTMLDocument__ = function(doc, text, url) {
                 window.dispatchEvent( event, false );
             }
         } catch (e) {
-            console.log('window load event failed %s', e);
+            console.error('window load event failed %s', e);
             //swallow
         }
     };  /* closes return {... */
@@ -13736,12 +13739,8 @@ Window = function(scope, parent, opener){
     // a read/write string that specifies the current status line.
     var $status = '';
     
-    scope.$timers = [];
-    scope.TIMER_LOOP_RUNNING = false;
-    scope.LAST_TIMER_EXECUTED = null;
-
-
     __extend__(scope, EventTarget.prototype);
+    //__extend__(scope, TimerTarget.prototype);
 
     return __extend__( scope, {
         get closed(){
@@ -13891,7 +13890,7 @@ Window = function(scope, parent, opener){
 
         open: function(url, name, features, replace){
             if (features) {
-                console.log("'features argument not yet implemented");
+                console.error("'features argument not yet implemented");
             }
             var _window = Envjs.proxy({}),
                 open;
@@ -13915,7 +13914,7 @@ Window = function(scope, parent, opener){
             try{
                 delete __windows__[$uuid];
             }catch(e){
-                console.log('%s',e);
+                console.error('closing window error: %s',e);
             }
         },
         alert : function(message){
@@ -13938,6 +13937,237 @@ Window = function(scope, parent, opener){
         get guid(){
             return $uuid;
         },
+      
+
+        $timers : [],
+        TIMER_LOOP_RUNNING : false,
+        LAST_TIMER_EXECUTED : null,
+
+        setTimeout : function(fn, time){
+            var num;
+            time = Timer.normalize(time);
+                num = $timers.length;
+                var tfn;
+                if (typeof fn === 'string') {
+                    tfn = function() {
+                        try {
+                            // eval in global scope
+                            Envjs.eval(window, fn);
+                        } catch (e) {
+                            console.error('timer error 1 (fn is str) %s %s', fn, e);
+                        } finally {
+                            clearInterval(num);
+                        }
+                    };
+                    tfn.fn = fn;
+                } else {
+                    tfn = function(debug1, debug2) {
+                        try {
+                            if (debug1) eval(debug1);
+                            fn();
+                            if (debug2) eval(debug2);
+                        } catch (e) {
+                            console.error('timer error 2 (fn is func) %s %s', fn, e);
+                        } finally {
+                            //console.log("Timer executed: %s", fn + "");
+                            clearInterval(num);
+                        }
+                    };
+                    tfn.fn = fn;
+                }
+                if (this !== window.top)
+                {
+                    console.warn("Creating timer in window [%s] number %s, src: %s", window.guid, num, fn+"");
+                }
+                $timers[num] = new Timer(tfn, time);
+                $timers[num].start();
+            return num;
+        },
+
+        /**
+         * @function setInterval
+         * @param {Object} fn
+         * @param {Object} time
+         */
+        setInterval : function(fn, time){
+            console.log('setting interval in window [%s] %s %s', this.guid, time, fn.toString().substring(0,64));
+            time = Timer.normalize(time);
+            if ( time < 10 ) {
+                time = 10;
+            }
+            var num;
+                num = this.$timers.length;
+                var tfn;
+                if (typeof fn === 'string') {
+                    tfn = function() {
+                        try {
+                            // eval in global scope
+                            Envjs.eval(window, fn);
+                        } catch (e) {
+                            console.error('interval error 1 (fn is str) %s %s', fn, e);
+                        } finally {
+                            //clearInterval(num);
+                        }
+                    };
+                    tfn.fn = fn;
+                } else {
+                    tfn = function() {
+                        try {
+                            fn();
+                        } catch (e) {
+                            console.error('interval error 2 (fn is func) %s %s', fn, e);
+                        } finally {
+                            //clearInterval(num);
+                        }
+                    };
+                    tfn.fn = fn;
+                }
+                if (this !== window.top)
+                {
+                    console.warn("Creating interval timer in window [%s] number %s, src: %s", window.guid, num, fn+"");
+                }
+                this.$timers[num] = new Timer(fn, time);
+                this.$timers[num].start();
+            return num;
+        },
+
+        /**
+         * clearInterval
+         * @param {Object} num
+         */
+        clearTimeout : function(num){
+            //console.log("clearing interval %s (of %s) : %s", num, $timers.length, $timers[num]);
+            var res = (function(){
+                if ( this.$timers[num] ) {
+                    this.$timers[num].stop();
+                    return delete this.$timers[num];
+                }
+                {
+                    //console.log("timer %s was not found  when clearing interval", num);
+                }
+                return false;
+            })();
+            if (res)
+            {
+                //console.log("cleared interval %s (of %s) : %s", num, $timers.length, $timers[num]);
+            }
+            else
+            {
+                //console.log("was not cleared interval %s (of %s) : %s", num, $timers.length, $timers[num]);
+            }
+
+        },
+        
+        clearInterval: function(num){return this.clearTimeout(num)},
+        
+
+        __wait : function(wait) {
+
+            if (this.TIMER_LOOP_RUNNING) return false;
+
+            var delta_wait,
+                start = Date.now(),
+                was_running = this.TIMER_LOOP_RUNNING;
+
+            if (wait < 0) {
+                delta_wait = -wait;
+                wait = 0;
+            }
+            this.TIMER_LOOP_RUNNING = true;
+
+            if ((wait !== 0) && (wait !== null) && (wait !== undefined)){
+                wait += Date.now();
+            }
+
+            var earliest,
+                timer,
+                sleep,
+                index,
+                goal,
+                now,
+                nextfn;
+            var totalSleep = 0, totalRun = 0;
+
+            for (;;) {
+                earliest = sleep = goal = now = nextfn = null;
+                (function(){
+                    for(index in this.$timers){
+                        if( isNaN(index*0) || !(timer = this.$timers[index])) {
+                            continue;
+                        }
+                        if( !timer.running && ( !earliest || timer.at < earliest.at) ) {
+                            earliest = timer;
+                        }
+                    }
+                })();
+                //next sleep time
+                sleep = earliest && earliest.at - Date.now();
+                if ( earliest && sleep <= 0 ) {
+                    nextfn = earliest.fn;
+                    try {
+                        earliest.running = true;
+                        nextfn();
+                    } catch (e) {
+                        console.error('timer error (in wait) %s %s', nextfn, e);
+                    } finally {
+                        earliest.running = false;
+                        totalRun++;
+                    }
+                    goal = earliest.at + earliest.interval;
+                    now = Date.now();
+                    if ( goal < now ) {
+                        earliest.at = now;
+                    } else {
+                        earliest.at = goal;
+                    }
+                }
+
+                // bunch of subtle cases here ...
+                if ( !earliest ) {
+                    // no events in the queue (but maybe XHR will bring in events, so ...
+                    if ( !wait || wait < Date.now() ) {
+                        // Loop ends if there are no events and a wait hasn't been
+                        // requested or has expired
+                        break;
+                    }
+                // no events, but a wait requested: fall through to sleep
+                } else {
+                    // there are events in the queue, but they aren't firable now
+                    /*if ( delta_wait && sleep <= delta_wait ) {
+                        //TODO: why waste a check on a tight
+                        // loop if it just falls through?
+                    // if they will happen within the next delta, fall through to sleep
+                    } else */if ( wait === 0 || ( wait > 0 && wait < Date.now () ) ) {
+                        // loop ends even if there are events but the user
+                        // specifcally asked not to wait too long
+                        break;
+                    }
+                    // there are events and the user wants to wait: fall through to sleep
+                }
+
+                // Related to ajax threads ... hopefully can go away ..
+                var interval =  Envjs.WAIT_INTERVAL || 100;
+                if ( !sleep || sleep > interval || sleep < 0 ) {
+                    sleep = interval;
+                }
+                Envjs.sleep(sleep);
+                totalSleep += sleep;
+
+                if (((wait < 0 || !wait) && (totalSleep > interval*5)) || (wait && totalSleep > wait))
+                {
+                    break;
+                }
+
+
+            }
+            //console.log("Total was waiting %s ms and %s timers were executed", totalSleep, totalRun);
+            this.TIMER_LOOP_RUNNING = was_running;
+            this.LAST_TIMER_EXECUTED = Date.now();
+
+            return totalRun;
+        },
+        
+        
     });
 
 };
@@ -13991,7 +14221,7 @@ function printStackTrace() {
       }
       //Remove call to printStackTrace()
       callstack.shift();
-      console.log("Stacktrace :" + callstack.join("\r\n"));
+      console.debug("Stacktrace :" + callstack.join("\r\n"));
     }
   }
   
