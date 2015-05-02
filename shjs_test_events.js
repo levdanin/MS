@@ -69,6 +69,8 @@ try
     */
 
     var el = document.getElementsByTagName('iframe')[0].contentDocument.getElementById('recaptcha-anchor');
+    if (!el) el = document.getElementById('recaptcha-anchor');
+    
     console.log("recaptcha-anchor element: " + el.xhtml);
     
     console.log("recaptcha-anchor events: " + __dumpObject__(el.__getEventListeners__()));
@@ -86,7 +88,7 @@ try
                 false, null, null);
     el.dispatchEvent(event);
     
-    Envjs.wait(10000);
+    Envjs.tick(10000);
         
     //console.log("iframe doc innerHTML: " + document.innerHTML);
     

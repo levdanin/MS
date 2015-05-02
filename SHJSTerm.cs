@@ -214,7 +214,7 @@ namespace WindowsFormsApplication1
 
                         else if (url.Contains("cb=gapi.loaded_2"))
                         {
-                            cont = Regex.Replace(cont, @"g\s*\=\s*window\.document\.body\s*\;", "g=window.top.document.body;");
+                            //cont = Regex.Replace(cont, @"g\s*\=\s*window\.document\.body\s*\;", "g=window.top.document.body;");
                         }
 
                         return cont;
@@ -297,7 +297,29 @@ namespace WindowsFormsApplication1
                                 }
                                 else if (lineParts[1] == COMMAND_LOG)
                                 {
-                                    string newLine = "Logged: " + processor.GetJsonVal("message", lineParts[2]);
+                                    string msg = processor.GetJsonVal("message", lineParts[2]);
+                                    string type = processor.GetJsonVal("type", lineParts[2]).ToLower().Trim();
+                                    string typeName = "";
+                                    switch (type)
+                                    {
+                                        case "":
+                                        case "log":
+                                            typeName = "Logged";
+                                            break;
+                                        case "debug":
+                                            typeName = "Debug";
+                                            break;
+                                        case "info":
+                                            typeName = "Information";
+                                            break;
+                                        case "warn":
+                                            typeName = "Warning";
+                                            break;
+                                        case "error":
+                                            typeName = "Error";
+                                            break;
+                                    }
+                                    string newLine = typeName + ": " + msg;
                                     notCommandText += newLine;
                                     form.log(newLine);
                                 }

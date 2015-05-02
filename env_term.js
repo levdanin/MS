@@ -95,8 +95,23 @@ function __trim__( str ){
 /**
  * Writes message to system out
  * @param {String} message
+ * @param {String} type
  */
-Envjs.log = function(message){SHJSTerm(SHJSTerm.COMMAND_LOG, {"message": message})};
+Envjs.log = function(message, type)
+{
+    type = type.trim().split(' ');
+    var typeStr = "";
+    switch(type[type.length - 1])
+    {
+        case "log":
+        case "debug":
+        case "info":
+        case "warn":
+        case "error":
+            typeStr = type[type.length - 1];
+    };
+    SHJSTerm(SHJSTerm.COMMAND_LOG, {"message": message, "type": typeStr});
+};
 
 /**
  * Constants providing enumerated levels for logging in modules
@@ -153,7 +168,7 @@ Envjs.onScriptLoadError = function(script, e){
     {
         msg = 'unable to get script src or text';
     }
-    console.log('error loading script %s %s', msg, e);
+    console.error('error loading script %s %s', msg, e);
 };
 
 
@@ -167,30 +182,6 @@ Envjs.__unescapeXML__ = function (str) {
     return str;
 };
 
-
-/**
- * load and execute script tag text content
- * @param {Object} script
- */
-Envjs.loadInlineScript = function(script){
-    /*
-    var tmpFile;
-    tmpFile = Envjs.writeToTempFile(script.text, 'js') ;
-    console.log("loading script from temp file %s", tmpFile);
-    load(tmpFile);
-    */
-    var scriptShort = script.text.substring(0, 100) + " ...";
-    if (script.alreadyProcessed)
-    {
-        console.log("inline script was processed already " + scriptShort);
-    }
-    else
-    {
-        console.log("running inline script " + scriptShort);
-        Envjs.eval(script.ownerDocument.ownerWindow, Envjs.__unescapeXML__(script.text), scriptShort);
-        script.alreadyProcessed = true;
-    }
-};
 
 
 Envjs.sandbox = function(context, parent)
@@ -220,84 +211,68 @@ Envjs.sandbox = function(context, parent)
 }
 
 
-Envjs.contexts = {'global': __this__};
-
-
 /**
  * Should evaluate script in some context
  * @param {Object} context
- * @param {Object} source
+ * @param {string} source
  * @param {Object} name
  */
-Envjs.eval = function(context, source, name, useSimpleEval){
+Envjs.eval = function(context, source, name)
+{
     var isWindowContext = (context + "") === "[Window]";
+    var srcTitle = source.substring(0, 100) + " ...";
     if (context && !isWindowContext)
     {
-        console.log("evaluating script '%s' in non-window context %s: %s", name, context, source.substring(0, 100) + " ...");
-        context.__thisEval__ = function(src){evalcx(src, window)};
+        console.log("evaluating script '%s' in non-window context %s: %s", name, context, srcTitle);
+        context.__thisEval__ = function(src){eval(src)};
         context.__thisEval__(source);
     }
-    else if (isWindowContext && (context !== window))
+    else if (context && isWindowContext)
     {
-        console.log("evaluating script '%s' in window [%s] context: %s", name, context.guid, source.substring(0, 100) + " ...");
-        context = Envjs.sandbox(context);
-        Envjs.contexts[context.location.href] = context;
-        evalcx(source, context);
+        console.log("evaluating script '%s' in %s window [%s] context: %s", name, context === window.top?'TOP':'', context.guid, srcTitle);
+        evalcx(source, context);        
     }
-    else if (context === window)
+    else /*if (!context)*/
     {
-        console.log("evaluating script '%s' in current context: %s", name, source.substring(0, 100) + " ...");
-        //
-        //window.__thisEval__ = function(src){eval(src)};
-        //window.__thisEval__(source);
-        //evalcx("(function(){" + source + "})()", window);
-        evaluate(source);
-        if (useSimpleEval)
-        {
-            //eval(source);
-        }
-        else
-        {
-            //evalcx(source, window);
-        }
-        //evalcx(source, window);
+        eval(source);
+    }
+    
+}
+
+__processedScriptsSrc__ = {};
+
+
+/**
+ * load and execute script tag text content
+ * @param {Object} script
+ */
+Envjs.loadInlineScript = function(script){
+    /*
+    var tmpFile;
+    tmpFile = Envjs.writeToTempFile(script.text, 'js') ;
+    console.log("loading script from temp file %s", tmpFile);
+    load(tmpFile);
+    */
+    var scriptShort = script.text.substring(0, 100) + " ...";
+    if (script.alreadyProcessed)
+    {
+        console.log("inline script was processed already " + scriptShort);
     }
     else
     {
-        console.log("evaluating script '%s' in inline context: %s", name, source.substring(0, 100) + " ...");
-        eval(source);
-    }       
-    
-    /*
-    try
-    {
-        if (!context || (context == __this__))
-        {
-            console.log("evaluating script %s", source.substring(0, 100) + " ...");
-            eval(source);
-        }
-        else
-        {
-            console.log("evaluating script %s in proxy scope %s", source.substring(0, 100) + " ...", context);
-            context.scopedEval = function(){eval(source)};
-            context.scopedEval();
-        }
+        console.log("running inline script " + scriptShort);
+        Envjs.eval(script.ownerDocument.ownerWindow, Envjs.__unescapeXML__(script.text), scriptShort);
+        script.alreadyProcessed = true;
     }
-    catch (e)
-    {
-        console.log("error evaluating script %s for context %s: %s", source.substring(0, 100) + " ...", context, e);
-    }
-    */
 };
 
-__processedScriptsSrc__ = {};
 
 /**
  * Executes a script tag
  * @param {Object} script
  * @param {Object} parser
  */
-Envjs.loadLocalScript = function(script, useSimple){
+Envjs.loadLocalScript = function(script, inTopWindow){
     //console.log("loading script %s", script);
     var types,
     src,
@@ -369,11 +344,16 @@ Envjs.loadLocalScript = function(script, useSimple){
         xhr.onreadystatechange = function(){
             console.log("script %s loaded readyState %s", filename, xhr.readyState);
             if(xhr.readyState === 4){
+                var ctx = script.ownerDocument.ownerWindow;
+                if (filename.indexOf("apis.google.com/_/scs/apps-static/_/js") >= 0 || inTopWindow)
+                {
+                    ctx = window.top;
+                }
+                
                 Envjs.eval(
-                    script.ownerDocument.ownerWindow,
+                    ctx,
                     xhr.responseText,
-                    filename,
-                    useSimple
+                    filename
                 );
                 script.alreadyProcessed = true;
                 //__processedScriptsSrc__[script.src] = true;
@@ -1496,6 +1476,8 @@ Envjs.loadFrame = function(frame, url){
  */
 var Console,
     console;
+    
+Envjs.console = {logLevel:1};
 
 /*
  * Envjs console.1.2.13 
@@ -1545,12 +1527,20 @@ Console = function(module){
     } else {
         $logger = {
             log: function(level){
-                logFormatted(arguments, "");
+                logFormatted(arguments, (module)+" ");
             },
-            debug: $null,
-            info: $null,
-            warn: $null,
-            error: $null
+            debug: function() {
+                logFormatted(arguments, (module)+" debug");
+            },
+            info: function(){
+                logFormatted(arguments, (module)+" info");
+            },
+            warn: function(){
+                logFormatted(arguments, (module)+" warning");
+            },
+            error: function(){
+                logFormatted(arguments, (module)+" error");
+            }
         };
     }
 
@@ -1597,8 +1587,7 @@ function logFormatted(objects, className)
             appendObject(object, html);
 	}
     }
-
-    Envjs.log(html.join(' '));
+    Envjs.log(html.join(' '), className);
 }
 
 function parseFormat(format)
@@ -5020,7 +5009,7 @@ var __toDomNode__ = function(e4, parent, doc){
             parent.appendChild(domnode);
             break;
         default:
-            console.log('e4x DOM ERROR');
+            console.error('e4x DOM ERROR');
             throw new Error("Assertion failed in xml parser");
         }
     }
@@ -5984,6 +5973,7 @@ var Timer = function(fn, interval){
     this.at = Date.now() + interval;
     // allows for calling wait() from callbacks
     this.running = false;
+    this.context = window;
 };
 
 Timer.prototype.start = function(){};
@@ -5996,7 +5986,7 @@ Timer.normalize = function(time) {
         time = 0;
     }
 
-    if ( TIMER_LOOP_RUNNING && time < Timer.MIN_TIME ) {
+    if ( window.TIMER_LOOP_RUNNING && time < Timer.MIN_TIME ) {
         time = Timer.MIN_TIME;
     }
     return time;
@@ -6013,20 +6003,20 @@ Timer.MIN_TIME =  4 /* 0 */;
 setTimeout = function(fn, time){
     var num;
     time = Timer.normalize(time);
-    (function(){
-        num = $timers.length;
+        num = window.$timers.length;
         var tfn;
-        if (typeof fn == 'string') {
+        if (typeof fn === 'string') {
             tfn = function() {
                 try {
                     // eval in global scope
                     Envjs.eval(window, fn);
                 } catch (e) {
-                    console.log('timer error 1 (fn is str) %s %s', fn, e);
+                    console.error('timer error 1 (fn is str) %s %s', fn, e);
                 } finally {
                     clearInterval(num);
                 }
             };
+            tfn.fn = fn;
         } else {
             tfn = function(debug1, debug2) {
                 try {
@@ -6034,17 +6024,20 @@ setTimeout = function(fn, time){
                     fn();
                     if (debug2) eval(debug2);
                 } catch (e) {
-                    console.log('timer error 2 (fn is func) %s %s', fn, e);
+                    console.error('timer error 2 (fn is func) %s %s', fn, e);
                 } finally {
                     //console.log("Timer executed: %s", fn + "");
                     clearInterval(num);
                 }
             };
+            tfn.fn = fn;
         }
-        //console.log("Creating timer number %s, src: %s", num, fn+"");
-        $timers[num] = new Timer(tfn, time);
-        $timers[num].start();
-    })();
+        if (window !== window.top)
+        {
+            console.log("Creating timer in window [%s] number %s, src: %s", window.guid, num, fn+"");
+        }
+        window.$timers[num] = new Timer(tfn, time);
+        window.$timers[num].start();
     return num;
 };
 
@@ -6060,35 +6053,38 @@ setInterval = function(fn, time){
         time = 10;
     }
     var num;
-    (function(){        
-        num = $timers.length;
+        num = window.$timers.length;
         var tfn;
-        if (typeof fn == 'string') {
+        if (typeof fn === 'string') {
             tfn = function() {
                 try {
                     // eval in global scope
                     Envjs.eval(window, fn);
                 } catch (e) {
-                    console.log('interval error 1 (fn is str) %s %s', fn, e);
+                    console.error('interval error 1 (fn is str) %s %s', fn, e);
                 } finally {
                     //clearInterval(num);
                 }
             };
+            tfn.fn = fn;
         } else {
             tfn = function() {
                 try {
                     fn();
                 } catch (e) {
-                    console.log('interval error 2 (fn is func) %s %s', fn, e);
+                    console.error('interval error 2 (fn is func) %s %s', fn, e);
                 } finally {
                     //clearInterval(num);
                 }
             };
+            tfn.fn = fn;
         }
-        //console.log("Creating interval timer number %s, src: %s", num, fn+"");
-        $timers[num] = new Timer(fn, time);
-        $timers[num].start();
-    })();
+        if (window !== window.top)
+        {
+            console.log("Creating interval timer in window [%s] number %s, src: %s", window.guid, num, fn+"");
+        }
+        window.$timers[num] = new Timer(fn, time);
+        window.$timers[num].start();
     return num;
 };
 
@@ -6099,9 +6095,9 @@ setInterval = function(fn, time){
 clearInterval = clearTimeout = function(num){
     //console.log("clearing interval %s (of %s) : %s", num, $timers.length, $timers[num]);
     var res = (function(){
-        if ( $timers[num] ) {
-            $timers[num].stop();
-            return delete $timers[num];
+        if ( window.$timers[num] ) {
+            window.$timers[num].stop();
+            return delete window.$timers[num];
         }
         {
             //console.log("timer %s was not found  when clearing interval", num);
@@ -6120,10 +6116,20 @@ clearInterval = clearTimeout = function(num){
 };
 
 
-Envjs.tick = function(){
-    if (LAST_TIMER_EXECUTED + 1000 < Date.now()) return false;
-    Envjs.wait(100);
-}
+Envjs.tick = function(wait){
+    if (!wait) wait = 100;
+    var contexts = [window.top];
+    for (var i in window.frames)
+    {
+        contexts.push(window.frames[i].contentWindow);
+    }
+    for (var i in contexts)
+    {
+        var context = contexts[i];
+        if ((context.LAST_TIMER_EXECUTED + 1000 < Date.now()) || context.TIMER_LOOP_RUNNING) continue;
+        Envjs.eval(context, "Envjs.wait(" + wait + ");", "Envjs.tick thread");
+    }
+};
 // wait === null/undefined: execute any timers as they fire,
 //  waiting until there are none left
 // wait(n) (n > 0): execute any timers as they fire until there
@@ -6136,18 +6142,18 @@ Envjs.tick = function(){
 // TODO: make a priority queue ...
 Envjs.wait = function(wait) {
     
-    if (TIMER_LOOP_RUNNING) return false;
+    if (window.TIMER_LOOP_RUNNING) return false;
     
     //console.log("Wait for %s ms started", wait);
     var delta_wait,
         start = Date.now(),
-        was_running = TIMER_LOOP_RUNNING;
+        was_running = window.TIMER_LOOP_RUNNING;
 
     if (wait < 0) {
         delta_wait = -wait;
         wait = 0;
     }
-    TIMER_LOOP_RUNNING = true;
+    window.TIMER_LOOP_RUNNING = true;
     
     if ((wait !== 0) && (wait !== null) && (wait !== undefined)){
         wait += Date.now();
@@ -6166,8 +6172,8 @@ Envjs.wait = function(wait) {
         //console.log('timer loop');
         earliest = sleep = goal = now = nextfn = null;
         (function(){
-            for(index in $timers){
-                if( isNaN(index*0) || !(timer = $timers[index])) {
+            for(index in window.$timers){
+                if( isNaN(index*0) || !(timer = window.$timers[index])) {
                     continue;
                 }
                 // determine timer with smallest run-at time that is
@@ -6186,7 +6192,7 @@ Envjs.wait = function(wait) {
                 earliest.running = true;
                 nextfn();
             } catch (e) {
-                console.log('timer error (in wait) %s %s', nextfn, e);
+                console.error('timer error (in wait) %s %s', nextfn, e);
             } finally {
                 earliest.running = false;
                 totalRun++;
@@ -6245,8 +6251,10 @@ Envjs.wait = function(wait) {
 
     }
     //console.log("Total was waiting %s ms and %s timers were executed", totalSleep, totalRun);
-    TIMER_LOOP_RUNNING = was_running;
-    LAST_TIMER_EXECUTED = Date.now();
+    window.TIMER_LOOP_RUNNING = was_running;
+    window.LAST_TIMER_EXECUTED = Date.now();
+    
+    return totalRun;
 };
 
 
@@ -6828,7 +6836,7 @@ Aspect.around({
                                     node.dispatchEvent( event, false );
                                 }
                             }catch(e){
-                                console.log('error loading html script element %s %e', node, e.toString());
+                                console.error('error loading html script element %s %e', node, e.toString());
                             }
                         }
                         break;
@@ -6837,7 +6845,7 @@ Aspect.around({
                         var nodeSrc = node.getAttribute('src');
                         console.log("IFRAME in Aspect.around - src %s", nodeSrc);
                         node.contentWindow = { };
-                        /*new Window(node.contentWindow, window.top);*/
+                        new Window(node.contentWindow, window);
                         node.contentDocument = new HTMLDocument(new DOMImplementation(), node.contentWindow);
                         node.contentWindow.document = node.contentDocument;
                         try{
@@ -6870,7 +6878,7 @@ Aspect.around({
                                 }catch(e){}
                             }
                         }catch(e){
-                            console.log('error loading html element %s %e', node, e.toString());
+                            console.error('error loading html element %s %e', node, e.toString());
                         }
                         break;
 
@@ -6906,6 +6914,7 @@ Aspect.around({
         default:
             // console.log('element appended: %s %s', node+'', node.namespaceURI);
     }//switch on doc.parsing
+    Envjs.tick();
     return node;
 
 });
@@ -6956,12 +6965,12 @@ Aspect.around({
                         try{
                             Envjs.unloadFrame(node);
                         }catch(e){
-                            console.log('error freeing resources from frame %s', e);
+                            console.error('error freeing resources from frame %s', e);
                         }
                         node.contentWindow = null;
                         node.contentDocument = null;
                     }catch(e){
-                        console.log('error unloading html element %s %e', node, e.toString());
+                        console.error('error unloading html element %s %e', node, e.toString());
                     }
                     break;
                 default:
@@ -6974,6 +6983,7 @@ Aspect.around({
         default:
             console.log('element appended: %s %s', node+'', node.namespaceURI);
     }//switch on doc.parsing
+    Envjs.tick();
     return node;
 
 });
@@ -7054,7 +7064,7 @@ var __eval__ = function(script, node){
         try{
             Envjs.eval(node, script, node + "");
         }catch(e){
-            console.log('error evaluating (__eval__) %s', e);
+            console.error('error evaluating (__eval__) %s', e);
         }
     }
 };
@@ -8823,7 +8833,8 @@ __extend__(HTMLHtmlElement.prototype, {
  */
 HTMLIFrameElement = function(ownerDocument) {
     HTMLFrameElement.apply(this, arguments);
-    console.log("HTMLIFrameElement ctor %s", this.tagName);
+    console.log("HTMLIFrameElement ctor %s %s", this.tagName, this.getAttribute("src"));
+    printStackTrace();
 };
 HTMLIFrameElement.prototype = new HTMLFrameElement();
 __extend__(HTMLIFrameElement.prototype, {
@@ -11888,7 +11899,7 @@ var k$h=jci(mIh,nIh),b$h=jci(pIh,qIh),q$h=jci(mIh,rIh),g$h=jci(mIh,sIh),l$h=jci(
 */
 
 __defineParser__(function(e){
-    console.log('Error loading html 5 parser implementation');
+    console.error('Error loading html 5 parser implementation');
 }, 'nu_validator_htmlparser_HtmlParser', '');
 
 /*DOMParser = function(principle, documentURI, baseURI){};
@@ -12119,7 +12130,7 @@ var __elementPopped__ = function(ns, name, node){
                                 case 'script':
                                     console.log('loading script from elementpop %s ', node);
                                     try{
-                                        okay = Envjs.loadLocalScript(node, true);
+                                        okay = Envjs.loadLocalScript(node);
                                         // console.log('loaded script? %s %s', node.uuid, okay);
                                         // only fire event if we actually had something to load
                                         if ((node.src && node.src.length > 0) || (node.text && node.text.length > 0)){
@@ -12129,7 +12140,7 @@ var __elementPopped__ = function(ns, name, node){
                                         }
                                         console.log('finished loading script from elementpop %s ', node);
                                     }catch(e){
-                                        console.log('error loading script html element %s %s %s %e', ns, name, node, e.toString());
+                                        console.error('error loading script html element %s %s %s %e', ns, name, node, e.toString());
                                     }
                                     break;
                                 case 'frame':
@@ -12137,7 +12148,7 @@ var __elementPopped__ = function(ns, name, node){
                                     var nodeSrc = node.getAttribute('src');
                                     console.log("IFRAME in __elementPopped__ %s", node.name);
                                     node.contentWindow = { };
-                                    /*new Window(node.contentWindow, window.top);*/
+                                    new Window(node.contentWindow, window);
                                     node.contentDocument = new HTMLDocument(new DOMImplementation(), node.contentWindow);
                                     node.contentWindow.document = node.contentDocument;
                                     try{
@@ -12170,7 +12181,7 @@ var __elementPopped__ = function(ns, name, node){
                                             }catch(e){}
                                         }
                                     }catch(e){
-                                        console.log('error loading html element %s %e', node, e.toString());
+                                        console.error('error loading html element %s %e', node, e.toString());
                                     }
                                     
                                     /*try{
@@ -12184,7 +12195,7 @@ var __elementPopped__ = function(ns, name, node){
                                             //console.log('src/parser/htmldocument: triggering frame load (no src)');
                                         }
                                     }catch(e){
-                                        console.log('error loading html element %s %s %s %e', ns, name, node, e.toString());
+                                        console.error('error loading html element %s %s %s %e', ns, name, node, e.toString());
                                     }*/
                                     break;
                                 case 'link':
@@ -12958,7 +12969,7 @@ var __exchangeHTMLDocument__ = function(doc, text, url) {
         HTMLParser.parseDocument(text, doc);
         Envjs.wait();
     } catch (e) {
-        console.log('parsererror %s', e);
+        console.error('parsererror %s', e);
         try {
             console.log('document \n %s', doc.documentElement.outerHTML);
         } catch (e) {
@@ -12976,7 +12987,7 @@ var __exchangeHTMLDocument__ = function(doc, text, url) {
         html.appendChild(head);
         html.appendChild(body);
         doc.appendChild(html);
-        //console.log('default error document \n %s', doc.documentElement.outerHTML);
+        //console.error('default error document \n %s', doc.documentElement.outerHTML);
 
         //DOMContentLoaded event
         if (doc.createEvent) {
@@ -13724,11 +13735,11 @@ Window = function(scope, parent, opener){
 
     // a read/write string that specifies the current status line.
     var $status = '';
-
-
-    var $__timers__ = [];
+    
+    scope.$timers = [];
     scope.TIMER_LOOP_RUNNING = false;
     scope.LAST_TIMER_EXECUTED = null;
+
 
     __extend__(scope, EventTarget.prototype);
 
@@ -13755,7 +13766,7 @@ Window = function(scope, parent, opener){
         },
         */
         get frames(){
-        return new HTMLCollection($document.getElementsByTagName('frame'));
+            return new HTMLCollection($document.getElementsByTagName('iframe'));
         },
         get length(){
             // should be frames.length,
@@ -13927,7 +13938,6 @@ Window = function(scope, parent, opener){
         get guid(){
             return $uuid;
         },
-        get $timers(){return $__timers__;}
     });
 
 };
@@ -13991,7 +14001,7 @@ function printStackTrace() {
 /* for correct this must be used like __debugInput__.call/apply(this) */
 var __debugInput__ = function ()
 {
-    var promptMsg = "Please enter javascript ('ok!' to finish) and press 'Run':";
+    var promptMsg = "Please enter javascript ('ok!' to finish) and press 'Run':>_";
     SHJSTerm(SHJSTerm.COMMAND_OUTPUT, {data: promptMsg});
     var js = SHJSTerm(SHJSTerm.COMMAND_READ_JS).data;
     while (js.trim().toLowerCase() !== "ok!")
@@ -14050,7 +14060,14 @@ function __dumpObject__(o, maxLevel, currLevel, showGettersAndSetters, label, sh
             }
             else
             {
-                txt = o[i] + "";
+                try
+                {
+                    txt = o[i] + "";
+                }
+                catch(e)
+                {
+                    txt = "(non-primitive) - [" + typeof o[i] + "]"
+                }
             }
             res += pref + i + " (" + typeof o[i] + ") = " + txt + "\r\n";
             if (typeof o[i] === "object")
