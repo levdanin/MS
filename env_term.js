@@ -345,10 +345,15 @@ Envjs.loadLocalScript = function(script, inTopWindow){
             console.log("script %s loaded readyState %s", filename, xhr.readyState);
             if(xhr.readyState === 4){
                 var ctx = script.ownerDocument.ownerWindow;
-                if (filename.indexOf("apis.google.com/_/scs/apps-static/_/js") >= 0 || inTopWindow)
+                if (
+                    /*filename.indexOf("apis.google.com/_/scs/apps-static/_/js") >= 0 
+                    || */
+                    inTopWindow
+                    )
                 {
                     ctx = window.top;
                 }
+                
                 
                 Envjs.eval(
                     ctx,
@@ -1461,6 +1466,10 @@ Envjs.loadFrame = function(frame, url){
 // The following are in rhino/window.js
 // TODO: Envjs.unloadFrame
 // TODO: Envjs.proxy
+
+Envjs.unloadFrame = function(node){
+    return true;
+}
 
 /**
  * @author john resig & the envjs team
@@ -6129,135 +6138,17 @@ Envjs.tick = function(wait){
     }
     for (var i = 0; i < contexts.length; i++)
     {
-        if ((contexts[i].LAST_TIMER_EXECUTED && contexts[i].LAST_TIMER_EXECUTED + 1000 < Date.now()) || contexts[i].TIMER_LOOP_RUNNING) continue;
+        if (!contexts[i].__isReadyToRunTimers()) continue;
         Envjs.eval(contexts[i], "window.__wait(" + wait + ");", "Envjs.tick thread");
     }
 };
-// wait === null/undefined: execute any timers as they fire,
-//  waiting until there are none left
-// wait(n) (n > 0): execute any timers as they fire until there
-//  are none left waiting at least n ms but no more, even if there
-//  are future events/current threads
-// wait(0): execute any immediately runnable timers and return
-// wait(-n): keep sleeping until the next event is more than n ms
-//  in the future
-//
-// TODO: make a priority queue ...
+
+
 Envjs.wait = function(wait) {
-    
-    if (window.TIMER_LOOP_RUNNING) return false;
-    
-    //console.log("Wait for %s ms started", wait);
-    var delta_wait,
-        start = Date.now(),
-        was_running = window.TIMER_LOOP_RUNNING;
-
-    if (wait < 0) {
-        delta_wait = -wait;
-        wait = 0;
-    }
-    window.TIMER_LOOP_RUNNING = true;
-    
-    if ((wait !== 0) && (wait !== null) && (wait !== undefined)){
-        wait += Date.now();
-    }
-
-    var earliest,
-        timer,
-        sleep,
-        index,
-        goal,
-        now,
-        nextfn;
-    var totalSleep = 0, totalRun = 0;
-
-    for (;;) {
-        //console.log('timer loop');
-        earliest = sleep = goal = now = nextfn = null;
-        (function(){
-            for(index in window.$timers){
-                if( isNaN(index*0) || !(timer = window.$timers[index])) {
-                    continue;
-                }
-                // determine timer with smallest run-at time that is
-                // not already running
-                if( !timer.running && ( !earliest || timer.at < earliest.at) ) {
-                    earliest = timer;
-                }
-            }
-        })();
-        //next sleep time
-        sleep = earliest && earliest.at - Date.now();
-        if ( earliest && sleep <= 0 ) {
-            nextfn = earliest.fn;
-            try {
-                //console.log('running stack %s', nextfn.toString().substring(0,64));
-                earliest.running = true;
-                nextfn();
-            } catch (e) {
-                console.error('timer error (in wait) %s %s', nextfn, e);
-            } finally {
-                earliest.running = false;
-                totalRun++;
-            }
-            goal = earliest.at + earliest.interval;
-            now = Date.now();
-            if ( goal < now ) {
-                earliest.at = now;
-            } else {
-                earliest.at = goal;
-            }
-            /*
-            if (totalRun > 100 && wait > 0) break;
-            continue;
-            */
-        }
-
-        // bunch of subtle cases here ...
-        if ( !earliest ) {
-            // no events in the queue (but maybe XHR will bring in events, so ...
-            if ( !wait || wait < Date.now() ) {
-                // Loop ends if there are no events and a wait hasn't been
-                // requested or has expired
-                break;
-            }
-        // no events, but a wait requested: fall through to sleep
-        } else {
-            // there are events in the queue, but they aren't firable now
-            /*if ( delta_wait && sleep <= delta_wait ) {
-                //TODO: why waste a check on a tight
-                // loop if it just falls through?
-            // if they will happen within the next delta, fall through to sleep
-            } else */if ( wait === 0 || ( wait > 0 && wait < Date.now () ) ) {
-                // loop ends even if there are events but the user
-                // specifcally asked not to wait too long
-                break;
-            }
-            // there are events and the user wants to wait: fall through to sleep
-        }
-
-        // Related to ajax threads ... hopefully can go away ..
-        var interval =  Envjs.WAIT_INTERVAL || 100;
-        if ( !sleep || sleep > interval || sleep < 0 ) {
-            sleep = interval;
-        }
-        //sleep = 100;
-        //console.log('sleeping %s', sleep);
-        Envjs.sleep(sleep);
-        totalSleep += sleep;
-        
-        if (((wait < 0 || !wait) && (totalSleep > interval*5)) || (wait && totalSleep > wait))
-        {
-            break;
-        }
-        
-
-    }
-    //console.log("Total was waiting %s ms and %s timers were executed", totalSleep, totalRun);
-    window.TIMER_LOOP_RUNNING = was_running;
-    window.LAST_TIMER_EXECUTED = Date.now();
-    
-    return totalRun;
+    var _dtstart = Date.now();
+    do {
+        Envjs.tick();
+    } while(Date.now() - _dtstart < wait);    
 };
 
 
@@ -13739,10 +13630,15 @@ Window = function(scope, parent, opener){
     // a read/write string that specifies the current status line.
     var $status = '';
     
-    __extend__(scope, EventTarget.prototype);
-    //__extend__(scope, TimerTarget.prototype);
+    var $timers = [];
+    var TIMER_LOOP_RUNNING = false;
+    var LAST_TIMER_EXECUTED = null;
 
-    return __extend__( scope, {
+    
+    
+    __extend__(scope, EventTarget.prototype);
+
+    __extend__( scope, {
         get closed(){
             return $closed;
         },
@@ -13890,7 +13786,7 @@ Window = function(scope, parent, opener){
 
         open: function(url, name, features, replace){
             if (features) {
-                console.error("'features argument not yet implemented");
+                console.error("features argument not yet implemented");
             }
             var _window = Envjs.proxy({}),
                 open;
@@ -13939,10 +13835,6 @@ Window = function(scope, parent, opener){
         },
       
 
-        $timers : [],
-        TIMER_LOOP_RUNNING : false,
-        LAST_TIMER_EXECUTED : null,
-
         setTimeout : function(fn, time){
             var num;
             time = Timer.normalize(time);
@@ -13952,7 +13844,7 @@ Window = function(scope, parent, opener){
                     tfn = function() {
                         try {
                             // eval in global scope
-                            Envjs.eval(window, fn);
+                            Envjs.eval(scope, fn);
                         } catch (e) {
                             console.error('timer error 1 (fn is str) %s %s', fn, e);
                         } finally {
@@ -13975,9 +13867,9 @@ Window = function(scope, parent, opener){
                     };
                     tfn.fn = fn;
                 }
-                if (this !== window.top)
+                if (scope !== window.top)
                 {
-                    console.warn("Creating timer in window [%s] number %s, src: %s", window.guid, num, fn+"");
+                    console.warn("Creating timer in window [%s] number %s, src: %s", scope.guid, num, fn+"");
                 }
                 $timers[num] = new Timer(tfn, time);
                 $timers[num].start();
@@ -13990,19 +13882,19 @@ Window = function(scope, parent, opener){
          * @param {Object} time
          */
         setInterval : function(fn, time){
-            console.log('setting interval in window [%s] %s %s', this.guid, time, fn.toString().substring(0,64));
+            console.log('setting interval in window [%s] %s %s', scope.guid, time, fn.toString().substring(0,64));
             time = Timer.normalize(time);
             if ( time < 10 ) {
                 time = 10;
             }
             var num;
-                num = this.$timers.length;
+                num = $timers.length;
                 var tfn;
                 if (typeof fn === 'string') {
                     tfn = function() {
                         try {
                             // eval in global scope
-                            Envjs.eval(window, fn);
+                            Envjs.eval(scope, fn);
                         } catch (e) {
                             console.error('interval error 1 (fn is str) %s %s', fn, e);
                         } finally {
@@ -14022,12 +13914,12 @@ Window = function(scope, parent, opener){
                     };
                     tfn.fn = fn;
                 }
-                if (this !== window.top)
+                if (scope !== window.top)
                 {
-                    console.warn("Creating interval timer in window [%s] number %s, src: %s", window.guid, num, fn+"");
+                    console.warn("Creating interval timer in window [%s] number %s, src: %s", scope.guid, num, fn+"");
                 }
-                this.$timers[num] = new Timer(fn, time);
-                this.$timers[num].start();
+                $timers[num] = new Timer(fn, time);
+                $timers[num].start();
             return num;
         },
 
@@ -14038,9 +13930,9 @@ Window = function(scope, parent, opener){
         clearTimeout : function(num){
             //console.log("clearing interval %s (of %s) : %s", num, $timers.length, $timers[num]);
             var res = (function(){
-                if ( this.$timers[num] ) {
-                    this.$timers[num].stop();
-                    return delete this.$timers[num];
+                if ( $timers[num] ) {
+                    $timers[num].stop();
+                    return delete $timers[num];
                 }
                 {
                     //console.log("timer %s was not found  when clearing interval", num);
@@ -14060,14 +13952,19 @@ Window = function(scope, parent, opener){
         
         clearInterval: function(num){return this.clearTimeout(num)},
         
+        
+        __isReadyToRunTimers: function() {
+            return  (!LAST_TIMER_EXECUTED || (LAST_TIMER_EXECUTED + 1000 < Date.now())) 
+                    && !TIMER_LOOP_RUNNING;
+        },
 
         __wait : function(wait) {
 
-            if (this.TIMER_LOOP_RUNNING) return false;
+            if (TIMER_LOOP_RUNNING) return false;
 
             var delta_wait,
                 start = Date.now(),
-                was_running = this.TIMER_LOOP_RUNNING;
+                was_running = TIMER_LOOP_RUNNING;
 
             if (wait < 0) {
                 delta_wait = -wait;
@@ -14091,8 +13988,8 @@ Window = function(scope, parent, opener){
             for (;;) {
                 earliest = sleep = goal = now = nextfn = null;
                 (function(){
-                    for(index in this.$timers){
-                        if( isNaN(index*0) || !(timer = this.$timers[index])) {
+                    for(index in $timers){
+                        if( isNaN(index*0) || !(timer = $timers[index])) {
                             continue;
                         }
                         if( !timer.running && ( !earliest || timer.at < earliest.at) ) {
@@ -14161,15 +14058,34 @@ Window = function(scope, parent, opener){
 
             }
             //console.log("Total was waiting %s ms and %s timers were executed", totalSleep, totalRun);
-            this.TIMER_LOOP_RUNNING = was_running;
-            this.LAST_TIMER_EXECUTED = Date.now();
+            TIMER_LOOP_RUNNING = was_running;
+            LAST_TIMER_EXECUTED = Date.now();
 
             return totalRun;
         },
         
         
     });
-
+/*
+    if (scope !== window.top) for (var field in scope)
+    {
+        console.warn(field + " - " + typeof scope[field]);
+        if (typeof scope[field] === "function" && field.indexOf("___sandboxed___func___") < 0)
+        {
+            var newField = "___sandboxed___func___" + field;
+            scope[newField] = scope[field];
+            console.warn(newField);
+            (function(){
+                var win = scope;
+                if (field !== "print")
+                {
+                    win[field] = function(){win[newField].apply(win, arguments)};
+                }
+            })();
+        }
+    }
+*/
+    return scope;
 };
 
 
@@ -14207,16 +14123,51 @@ __extend__(Envjs.defaultEventBehaviors,{
 }());
 
 
-function printStackTrace() {
+function printStackTrace(disableCodeShowing) {
   var callstack = [];
   try {
     i.dont.exist+=0; //doesn't exist- that's the point
   } catch(e) {
     if (e.stack) { //Firefox
       var lines = e.stack.split('\n');
+      var fileConts = [];
       for (var i=0, len=lines.length; i<len; i++) {
         //if (lines[i].match(/^\s*[A-Za-z0-9\-_\$]+\(/)) {
-          callstack.push(lines[i]);
+          var code = "";
+          var fileWithLine = (lines[i]+"").split('@')[1];
+          if (fileWithLine && !disableCodeShowing)
+          {
+            var fileWithLineSplitted = fileWithLine.split(':');
+            var lineNum = fileWithLineSplitted.pop();
+            if (parseInt(lineNum))
+            {
+                var file = fileWithLineSplitted.join(':');
+                if (!fileConts[file])
+                {
+                    try
+                    {
+                      fileConts[file] = read(file).split("\n");
+                    }
+                    catch (e)
+                    {
+                        console.error("Reading file line error: " + e);
+                    }
+                }
+                try
+                {
+                  code = fileConts[file][lineNum - 1];
+                }
+                catch (e)
+                {
+                    console.error("Getting file line error: " + e);
+                }
+            }
+          }
+          if (code && code.length > 300)
+          {
+              code = code.substring(0, 300) + " ...";
+          }
+          callstack.push(lines[i] + "  ~~~  " + code);
         //}
       }
       //Remove call to printStackTrace()

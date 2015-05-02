@@ -56,6 +56,7 @@ namespace WindowsFormsApplication1
                     string COMMAND_WRITE_FILE = "WRITE_FILE";
                     string COMMAND_WRITE_TMP_FILE = "WRITE_TMP_FILE";
                     string COMMAND_READ_FILE = "READ_FILE";
+                    string COMMAND_READ_FILE_LINE = "READ_FILE_LINE";
                     string COMMAND_SLEEP = "SLEEP";
                     string COMMAND_HTTP_REQUEST = "HTTP_REQUEST";
                     string COMMAND_HTTP_GET = "HTTP_GET";
@@ -221,25 +222,29 @@ namespace WindowsFormsApplication1
                     };
 
                     System.Diagnostics.Process jsProc = new System.Diagnostics.Process();
-                    jsProc.StartInfo.FileName = System.IO.Directory.GetCurrentDirectory() + @"\xulrunner\js.exe";
+                    jsProc.StartInfo.FileName = System.IO.Directory.GetCurrentDirectory() + @"\xulrunner\js.exe"; /* for executing from ms */
                     if (!System.IO.File.Exists(jsProc.StartInfo.FileName))
                     {
-                        jsProc.StartInfo.FileName = @"C:\Program Files\Alexandr Krulik\Magic Submitter\xulrunner\js.exe";
+                        jsProc.StartInfo.FileName = @"C:\Program Files\Alexandr Krulik\Magic Submitter\xulrunner\js.exe"; /* for running from vs */
                     }
                     string jsFilePath = System.IO.Path.GetTempFileName();
+                    System.IO.File.WriteAllText(jsFilePath, "");
+
                     /*
-                    System.IO.File.WriteAllText(jsFilePath, processor.GotoPageNoSet("https://raw.githubusercontent.com/levdanin/MS/master/shjsterm.js"));
+                    System.IO.File.AppendAllText(jsFilePath, processor.GotoPageNoSet("https://raw.githubusercontent.com/levdanin/MS/master/shjsterm.js"));
                     System.IO.File.AppendAllText(jsFilePath, processor.GotoPageNoSet("https://raw.githubusercontent.com/levdanin/MS/master/env_term.js"));
                     System.IO.File.AppendAllText(jsFilePath, processor.GotoPageNoSet("https://raw.githubusercontent.com/levdanin/MS/master/shjs_test_events.js"));
                     */
-                    System.IO.File.WriteAllText(jsFilePath, System.IO.File.ReadAllText(System.IO.Directory.GetCurrentDirectory() + @"\..\..\..\SHJSTerm\shjsterm.js"));
+                    System.IO.File.AppendAllText(jsFilePath, System.IO.File.ReadAllText(System.IO.Directory.GetCurrentDirectory() + @"\..\..\..\SHJSTerm\shjsterm.js"));
                     System.IO.File.AppendAllText(jsFilePath, System.IO.File.ReadAllText(System.IO.Directory.GetCurrentDirectory() + @"\..\..\..\SHJSTerm\env_term.js"));
                     //System.IO.File.AppendAllText(jsFilePath, System.IO.File.ReadAllText(System.IO.Directory.GetCurrentDirectory() + @"\..\..\..\SHJSTerm\shjs_test_scriptload.js"));
                     System.IO.File.AppendAllText(jsFilePath, System.IO.File.ReadAllText(System.IO.Directory.GetCurrentDirectory() + @"\..\..\..\SHJSTerm\shjs_test_events.js"));
+
                     jsProc.StartInfo.Arguments = @"-f " + jsFilePath;
                     jsProc.StartInfo.UseShellExecute = false;
                     jsProc.StartInfo.RedirectStandardOutput = true;
                     jsProc.StartInfo.RedirectStandardInput = true;
+                    jsProc.StartInfo.RedirectStandardError = true;
                     jsProc.StartInfo.CreateNoWindow = true;
                     form.log("***************************************************");
                     form.log("******************* STARTED ***********************");
@@ -249,8 +254,10 @@ namespace WindowsFormsApplication1
                     string line = "";
                     string[] lineParts;
                     string notCommandText = "";
+                    bool outputWasRead = false;
                     while (!jsProc.StandardOutput.EndOfStream)
                     {
+                        outputWasRead = true;
                         Application.DoEvents();
                         Application.DoEvents();
                         Application.DoEvents();
@@ -292,7 +299,6 @@ namespace WindowsFormsApplication1
                                 if (lineParts[1] == COMMAND_OUTPUT)
                                 {
                                     string newLine = "Output:" + processor.GetJsonVal("data", lineParts[2]);
-                                    notCommandText += newLine;
                                     form.log(newLine);
                                 }
                                 else if (lineParts[1] == COMMAND_LOG)
@@ -310,17 +316,16 @@ namespace WindowsFormsApplication1
                                             typeName = "Debug";
                                             break;
                                         case "info":
-                                            typeName = "Information";
+                                            typeName = "Info";
                                             break;
                                         case "warn":
-                                            typeName = "Warning";
+                                            typeName = "Warn";
                                             break;
                                         case "error":
                                             typeName = "Error";
                                             break;
                                     }
                                     string newLine = typeName + ": " + msg;
-                                    notCommandText += newLine;
                                     form.log(newLine);
                                 }
                                 else if (lineParts[1] == COMMAND_HTTP_GET)
@@ -375,6 +380,34 @@ namespace WindowsFormsApplication1
                                         cont = null;
                                     }
                                     jsProc.StandardInput.WriteLine(cont);
+                                }
+                                else if (lineParts[1] == COMMAND_READ_FILE_LINE)
+                                {
+                                    string fpath = processor.GetJsonVal("path", lineParts[2]);
+                                    if (fpath.StartsWith("file://"))
+                                    {
+                                        fpath = fpath.Substring(7);
+                                    }
+                                    int lineNum = Convert.ToInt32(processor.GetJsonVal("line", lineParts[2]));
+                                    string lineRead = "";
+                                    if (System.IO.File.Exists(fpath))
+                                    {
+                                        using (System.IO.Stream stream = System.IO.File.Open(fpath, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                                        {
+                                            using (System.IO.StreamReader reader = new System.IO.StreamReader(stream))
+                                            {
+                                                for (int i = 0; i < lineNum; ++i)
+                                                {
+                                                    lineRead = reader.ReadLine();
+                                                }
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        lineRead = null;
+                                    }
+                                    jsProc.StandardInput.WriteLine(lineRead);
                                 }
                                 else if (lineParts[1] == COMMAND_WRITE_FILE)
                                 {
@@ -434,6 +467,9 @@ namespace WindowsFormsApplication1
                             */
                         }
                     }
+
+                    if (!outputWasRead) while (!jsProc.StandardError.EndOfStream) notCommandText += jsProc.StandardError.ReadToEnd();
+
                     jsProc.WaitForExit(2000);
                     try
                     {
@@ -442,9 +478,22 @@ namespace WindowsFormsApplication1
                     catch (Exception e) { }
                     _terminateSignalRecieved = false;
                     _processIsPaused = false;
+
                     return notCommandText;
                 };
             string response = runJS();
+
+            if (!String.IsNullOrEmpty(response))
+            {
+                form.log("*******************************************************************************");
+                form.log("*******************************************************************************");
+                form.log("************************** NON-TERMINAL RESPONSE ******************************");
+                form.log("*******************************************************************************");
+
+                form.log(response);
+            }
+
+            form.log("*******************************************************************************"); 
             form.log("*******************************************************************************");
             form.log("************************************ FINISHED *********************************");
             form.log("*******************************************************************************");
